@@ -10,7 +10,7 @@ internal static class ChatClientFactory
 {
     public static IChatClient Create()
     {
-        var provider = (Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "ollama").ToLowerInvariant();
+        var provider = (Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "openai").ToLowerInvariant();
         var model = Environment.GetEnvironmentVariable("CRC_MODEL");
 
         return provider switch

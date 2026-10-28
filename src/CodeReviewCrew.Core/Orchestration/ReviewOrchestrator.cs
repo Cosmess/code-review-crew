@@ -54,7 +54,7 @@ public sealed class ReviewOrchestrator
         AgentStarted?.Invoke(definition.Name);
 
         var response = await agent.RunAsync<SpecialistFindings>(
-            $"Review this pull request diff:\n\n```diff\n{diff}\n```",
+            $"Revise o diff deste pull request:\n\n```diff\n{diff}\n```",
             serializerOptions: JsonOptions,
             cancellationToken: cancellationToken);
 
@@ -66,8 +66,8 @@ public sealed class ReviewOrchestrator
     private static string BuildSynthesizerPrompt(string diff, IEnumerable<SpecialistReport> reports)
     {
         var prompt = new StringBuilder();
-        prompt.AppendLine("Pull request diff:").AppendLine("```diff").AppendLine(diff).AppendLine("```").AppendLine();
-        prompt.AppendLine("Specialist findings:");
+        prompt.AppendLine("Diff do pull request:").AppendLine("```diff").AppendLine(diff).AppendLine("```").AppendLine();
+        prompt.AppendLine("Análises dos especialistas:");
         foreach (var report in reports)
         {
             prompt.AppendLine($"## {report.Agent}").AppendLine(JsonSerializer.Serialize(report.Findings, JsonOptions));

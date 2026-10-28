@@ -14,7 +14,7 @@ else if (Console.IsInputRedirected)
 }
 else
 {
-    Console.Error.WriteLine("Usage: crc <diff-file>  |  git diff | crc");
+    Console.Error.WriteLine("Uso: crc <arquivo-diff>  |  git diff | crc");
     return 1;
 }
 
@@ -22,8 +22,8 @@ using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 var orchestrator = new ReviewOrchestrator(ChatClientFactory.Create());
-orchestrator.AgentStarted += name => Console.Error.WriteLine($"▶ {name} started");
-orchestrator.AgentCompleted += report => Console.Error.WriteLine($"✔ {report.Agent} finished with {report.Findings.Count} finding(s)");
+orchestrator.AgentStarted += name => Console.Error.WriteLine($"▶ {name} iniciou");
+orchestrator.AgentCompleted += report => Console.Error.WriteLine($"✔ {report.Agent} terminou com {report.Findings.Count} problema(s)");
 
 var result = await orchestrator.ReviewAsync(diff, cts.Token);
 Console.WriteLine(MarkdownRenderer.Render(result));

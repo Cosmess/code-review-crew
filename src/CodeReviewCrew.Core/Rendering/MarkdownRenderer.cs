@@ -12,16 +12,16 @@ public static class MarkdownRenderer
         var md = new StringBuilder();
 
         md.AppendLine("## 🤖 Code Review Crew").AppendLine();
-        md.AppendLine($"**Verdict:** {VerdictLabel(report.Verdict)}").AppendLine();
+        md.AppendLine($"**Veredito:** {VerdictLabel(report.Verdict)}").AppendLine();
         md.AppendLine(report.Summary).AppendLine();
 
         if (report.Findings.Count == 0)
         {
-            md.AppendLine("No issues found. ✅");
+            md.AppendLine("Nenhum problema encontrado. ✅");
         }
         else
         {
-            md.AppendLine("| Severity | Location | Issue |").AppendLine("|---|---|---|");
+            md.AppendLine("| Severidade | Local | Problema |").AppendLine("|---|---|---|");
             foreach (var f in report.Findings.OrderByDescending(f => f.Severity))
             {
                 var location = f.Line is { } line ? $"`{f.File}:{line}`" : $"`{f.File}`";
@@ -35,15 +35,15 @@ public static class MarkdownRenderer
                 md.AppendLine(f.Explanation).AppendLine();
                 if (!string.IsNullOrWhiteSpace(f.Suggestion))
                 {
-                    md.AppendLine($"**Suggestion:** {f.Suggestion}").AppendLine();
+                    md.AppendLine($"**Sugestão:** {f.Suggestion}").AppendLine();
                 }
             }
         }
 
-        md.AppendLine("<details><summary>Raw findings per agent</summary>").AppendLine();
+        md.AppendLine("<details><summary>Análises por agente</summary>").AppendLine();
         foreach (var r in result.SpecialistReports)
         {
-            md.AppendLine($"- **{r.Agent}**: {r.Findings.Count} finding(s)");
+            md.AppendLine($"- **{r.Agent}**: {r.Findings.Count} problema(s)");
         }
 
         md.AppendLine().AppendLine("</details>");
@@ -52,18 +52,18 @@ public static class MarkdownRenderer
 
     private static string VerdictLabel(Verdict verdict) => verdict switch
     {
-        Verdict.Approve => "✅ Approve",
-        Verdict.Comment => "💬 Comment",
-        Verdict.RequestChanges => "❌ Request changes",
+        Verdict.Approve => "✅ Aprovar",
+        Verdict.Comment => "💬 Comentar",
+        Verdict.RequestChanges => "❌ Solicitar alterações",
         _ => verdict.ToString()
     };
 
     private static string SeverityLabel(Severity severity) => severity switch
     {
-        Severity.Critical => "🔴 Critical",
-        Severity.High => "🟠 High",
-        Severity.Medium => "🟡 Medium",
-        Severity.Low => "🔵 Low",
+        Severity.Critical => "🔴 Crítico",
+        Severity.High => "🟠 Alto",
+        Severity.Medium => "🟡 Médio",
+        Severity.Low => "🔵 Baixo",
         _ => "⚪ Info"
     };
 

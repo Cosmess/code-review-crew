@@ -25,8 +25,8 @@ public class ReviewOrchestratorTests
 
     private static FakeChatClient CreateFake() => new(prompt => prompt switch
     {
-        _ when prompt.Contains("lead reviewer") => Synthesized,
-        _ when prompt.Contains("security engineer") => SqlInjection,
+        _ when prompt.Contains("revisor líder") => Synthesized,
+        _ when prompt.Contains("engenheiro sênior de segurança") => SqlInjection,
         _ => Empty
     });
 
@@ -42,8 +42,8 @@ public class ReviewOrchestratorTests
 
         Assert.Equal(3, result.SpecialistReports.Count);
         Assert.Equal(4, fake.Prompts.Count);
-        Assert.Equal("SynthesizerAgent", started[^1]);
-        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "SecurityAgent").Findings);
+        Assert.Equal("AgenteSintetizador", started[^1]);
+        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca").Findings);
     }
 
     [Fact]
@@ -53,9 +53,9 @@ public class ReviewOrchestratorTests
 
         await new ReviewOrchestrator(fake).ReviewAsync(Diff);
 
-        var synthesizerPrompt = fake.Prompts.Single(p => p.Contains("lead reviewer"));
+        var synthesizerPrompt = fake.Prompts.Single(p => p.Contains("revisor líder"));
         Assert.Contains("SQL injection", synthesizerPrompt);
-        Assert.Contains("SecurityAgent", synthesizerPrompt);
+        Assert.Contains("AgenteSeguranca", synthesizerPrompt);
         Assert.Contains("UserRepository.cs", synthesizerPrompt);
     }
 
