@@ -1,0 +1,32 @@
+# Configuração do Code Review Crew. Copie para .crc.yml na raiz do seu repositório.
+
+# Agentes especialistas que vão rodar (padrão: todos).
+# Valores: seguranca, owasp, performance, estilo
+agents:
+  - seguranca
+  - owasp
+  - performance
+  - estilo
+
+# Problemas abaixo desta severidade são descartados: Info, Low, Medium, High, Critical
+minSeverity: Low
+
+# Arquivos que nunca são revisados (padrões glob).
+ignore:
+  - "**/*.Designer.cs"
+  - "**/Migrations/**"
+  - "docs/**"
+
+# Tamanho máximo do diff, em caracteres, enviado a um agente por requisição.
+# Diffs maiores são divididos por arquivo.
+maxChunkChars: 60000
+
+# Tempo limite de cada chamada a um agente e quantas vezes tentar de novo em caso de falha.
+agentTimeoutSeconds: 180
+maxRetries: 2
+
+# Preço do modelo em US$ por 1 milhão de tokens, para estimar o custo da revisão.
+# Confira os valores atuais na página de preços do seu provedor.
+# pricing:
+#   inputPerMillion: 0.25
+#   outputPerMillion: 2.00

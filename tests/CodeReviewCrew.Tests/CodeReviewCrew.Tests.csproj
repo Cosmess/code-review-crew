@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\CodeReviewCrew.Core\CodeReviewCrew.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\.crc.example.yml" Link=".crc.example.yml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

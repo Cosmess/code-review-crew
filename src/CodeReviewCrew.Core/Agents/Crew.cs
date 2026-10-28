@@ -12,6 +12,7 @@ public static class Crew
         """;
 
     public static readonly AgentDefinition Security = new(
+        "seguranca",
         "AgenteSeguranca",
         "Encontra vulnerabilidades de segurança.",
         $"""
@@ -23,6 +24,7 @@ public static class Crew
         """);
 
     public static readonly AgentDefinition Owasp = new(
+        "owasp",
         "AgenteOwasp",
         "Verifica vulnerabilidades com base no OWASP Top 10.",
         $"""
@@ -44,6 +46,7 @@ public static class Crew
         """);
 
     public static readonly AgentDefinition Performance = new(
+        "performance",
         "AgentePerformance",
         "Encontra problemas de performance e escalabilidade.",
         $"""
@@ -55,6 +58,7 @@ public static class Crew
         """);
 
     public static readonly AgentDefinition Style = new(
+        "estilo",
         "AgenteEstilo",
         "Verifica legibilidade, nomenclatura e manutenibilidade.",
         $"""
@@ -66,6 +70,7 @@ public static class Crew
         """);
 
     public static readonly AgentDefinition Synthesizer = new(
+        "sintetizador",
         "AgenteSintetizador",
         "Consolida as análises dos especialistas em uma única revisão.",
         """
