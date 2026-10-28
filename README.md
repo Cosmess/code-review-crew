@@ -13,10 +13,10 @@ their findings into a single, deduplicated review, ready to post as a PR comment
 
 ```mermaid
 flowchart LR
-    D[PR diff] --> S1[🔐 SecurityAgent]
-    D --> S2[⚡ PerformanceAgent]
-    D --> S3[🧹 StyleAgent]
-    S1 --> Y[🧠 SynthesizerAgent]
+    D[PR diff] --> S1[🔐 AgenteSeguranca]
+    D --> S2[⚡ AgentePerformance]
+    D --> S3[🧹 AgenteEstilo]
+    S1 --> Y[🧠 AgenteSintetizador]
     S2 --> Y
     S3 --> Y
     D --> Y
@@ -25,36 +25,36 @@ flowchart LR
 
 | Agent | Responsibility |
 |---|---|
-| **SecurityAgent** | Injection, hardcoded secrets, auth flaws, sensitive data exposure |
-| **PerformanceAgent** | N+1 queries, sync-over-async, allocations, missing cancellation |
-| **StyleAgent** | Naming, swallowed exceptions, dead code, maintainability |
-| **SynthesizerAgent** | Merges duplicates, discards false positives, ranks by severity, decides the verdict |
+| **AgenteSeguranca** | Injection, hardcoded secrets, auth flaws, sensitive data exposure |
+| **AgentePerformance** | N+1 queries, sync-over-async, allocations, missing cancellation |
+| **AgenteEstilo** | Naming, swallowed exceptions, dead code, maintainability |
+| **AgenteSintetizador** | Merges duplicates, discards false positives, ranks by severity, decides the verdict |
 
 Design highlights:
 
 - **Fan-out / fan-in orchestration**: specialists run concurrently; the synthesizer runs once all are done.
 - **Structured output**: every agent returns typed JSON (`ReviewFinding`, `ReviewReport`) instead of free text.
-- **Provider-agnostic**: built on `Microsoft.Extensions.AI.IChatClient`, so it runs on Ollama (local, free), OpenAI or Anthropic Claude.
+- **OpenAI by default, provider-agnostic by design**: built on `Microsoft.Extensions.AI.IChatClient`, so it can also run on Ollama (local) or Anthropic Claude.
+- **Reviews in Brazilian Portuguese**: agent roles and instructions are written in Portuguese, and so is the generated review.
 - **Deterministic tests**: the orchestration is tested with a fake `IChatClient`, without calling any LLM.
 
 ## Getting started
 
-Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download) and one LLM provider.
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download) and an [OpenAI API key](https://platform.openai.com/api-keys).
 
 ```bash
 git clone https://github.com/Cosmess/code-review-crew.git
 cd code-review-crew
 
-# Option 1: local model with Ollama (no API key)
-ollama pull qwen3:8b
+# OpenAI (default)
+export OPENAI_API_KEY=sk-...
 dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 
-# Option 2: Anthropic Claude
-CRC_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... \
-  dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
+# Alternative: local model with Ollama (no API key)
+CRC_PROVIDER=ollama dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 
-# Option 3: OpenAI
-CRC_PROVIDER=openai OPENAI_API_KEY=sk-... \
+# Alternative: Anthropic Claude
+CRC_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... \
   dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 ```
 
@@ -68,10 +68,11 @@ git diff main | dotnet run --project src/CodeReviewCrew.Cli
 
 | Variable | Default | Description |
 |---|---|---|
-| `CRC_PROVIDER` | `ollama` | `ollama`, `openai` or `anthropic` |
-| `CRC_MODEL` | provider-specific | Model id (e.g. `qwen3:8b`, `gpt-5-mini`, `claude-sonnet-5-5`) |
+| `CRC_PROVIDER` | `openai` | `openai`, `ollama` or `anthropic` |
+| `CRC_MODEL` | `gpt-5-mini` (OpenAI) | Model id (e.g. `gpt-5-mini`, `qwen3:8b`, `claude-sonnet-5-5`) |
 | `OLLAMA_ENDPOINT` | `http://localhost:11434` | Ollama server URL |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | | API key for the chosen provider |
+| `OPENAI_API_KEY` | | OpenAI API key (required for the default provider) |
+| `ANTHROPIC_API_KEY` | | Anthropic API key, when `CRC_PROVIDER=anthropic` |
 
 ## Project structure
 
