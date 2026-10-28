@@ -14,10 +14,12 @@ their findings into a single, deduplicated review, ready to post as a PR comment
 ```mermaid
 flowchart LR
     D[PR diff] --> S1[🔐 AgenteSeguranca]
+    D --> S4[🛡️ AgenteOwasp]
     D --> S2[⚡ AgentePerformance]
     D --> S3[🧹 AgenteEstilo]
     S1 --> Y[🧠 AgenteSintetizador]
     S2 --> Y
+    S4 --> Y
     S3 --> Y
     D --> Y
     Y --> R[Markdown review<br/>verdict + findings]
@@ -26,11 +28,14 @@ flowchart LR
 | Agent | Responsibility |
 |---|---|
 | **AgenteSeguranca** | Injection, hardcoded secrets, auth flaws, sensitive data exposure |
+| **AgenteOwasp** | Audits the diff against each OWASP Top 10:2025 category (A01–A10) and tags findings with the category |
 | **AgentePerformance** | N+1 queries, sync-over-async, allocations, missing cancellation |
 | **AgenteEstilo** | Naming, swallowed exceptions, dead code, maintainability |
 | **AgenteSintetizador** | Merges duplicates, discards false positives, ranks by severity, decides the verdict |
 
 Design highlights:
+
+- **OWASP-aware**: a dedicated agent maps every vulnerability to its OWASP Top 10:2025 category and suggests the OWASP-recommended mitigation.
 
 - **Fan-out / fan-in orchestration**: specialists run concurrently; the synthesizer runs once all are done.
 - **Structured output**: every agent returns typed JSON (`ReviewFinding`, `ReviewReport`) instead of free text.

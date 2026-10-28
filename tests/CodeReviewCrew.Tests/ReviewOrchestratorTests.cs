@@ -40,8 +40,8 @@ public class ReviewOrchestratorTests
 
         var result = await orchestrator.ReviewAsync(Diff);
 
-        Assert.Equal(3, result.SpecialistReports.Count);
-        Assert.Equal(4, fake.Prompts.Count);
+        Assert.Equal(4, result.SpecialistReports.Count);
+        Assert.Equal(5, fake.Prompts.Count);
         Assert.Equal("AgenteSintetizador", started[^1]);
         Assert.Single(result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca").Findings);
     }
