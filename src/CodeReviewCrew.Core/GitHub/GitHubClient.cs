@@ -28,10 +28,15 @@ public sealed class GitHubClient
     private readonly HttpClient _http;
 
     /// <param name="http">An <see cref="HttpClient"/> whose base address is the GitHub API (e.g. https://api.github.com/).</param>
-    public GitHubClient(HttpClient http, string token)
+    /// <param name="token">Optional for reading public repositories, required to post reviews.</param>
+    public GitHubClient(HttpClient http, string? token)
     {
         _http = http;
-        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (!string.IsNullOrEmpty(token))
+        {
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("code-review-crew");
         _http.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
     }

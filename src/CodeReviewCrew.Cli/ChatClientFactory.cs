@@ -26,11 +26,12 @@ internal static class ChatClientFactory
             "anthropic" => new AnthropicClient { ApiKey = RequireEnv("ANTHROPIC_API_KEY") }
                 .AsIChatClient(model ?? "claude-sonnet-5-5"),
 
-            _ => throw new InvalidOperationException($"Unknown provider '{provider}'. Use ollama, openai or anthropic.")
+            _ => throw new InvalidOperationException($"Provedor desconhecido '{provider}'. Use openai, ollama ou anthropic.")
         };
     }
 
     private static string RequireEnv(string name) =>
-        Environment.GetEnvironmentVariable(name)
-        ?? throw new InvalidOperationException($"Environment variable {name} is not set.");
+        Environment.GetEnvironmentVariable(name) is { Length: > 0 } value
+            ? value
+            : throw new InvalidOperationException($"A variável de ambiente {name} não está definida.");
 }
