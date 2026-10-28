@@ -2,96 +2,95 @@
 
 [![CI](https://github.com/Cosmess/code-review-crew/actions/workflows/ci.yml/badge.svg)](https://github.com/Cosmess/code-review-crew/actions/workflows/ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green)
 
-A **multi-agent code reviewer** built with .NET 10 and the
+Um **revisor de código multi-agentes** construído com .NET 10 e o
 [Microsoft Agent Framework](https://github.com/microsoft/agent-framework).
-Specialist AI agents review a pull request diff in parallel, and a lead agent consolidates
-their findings into a single, deduplicated review, ready to post as a PR comment.
+Agentes de IA especialistas analisam o diff de um pull request em paralelo, e um agente líder consolida
+as análises em uma única revisão, sem duplicatas, pronta para ser publicada como comentário no PR.
 
-## How it works
+## Como funciona
 
 ```mermaid
 flowchart LR
-    D[PR diff] --> S1[🔐 AgenteSeguranca]
-    D --> S4[🛡️ AgenteOwasp]
-    D --> S2[⚡ AgentePerformance]
-    D --> S3[🧹 AgenteEstilo]
+    D[Diff do PR] --> S1[🔐 AgenteSeguranca]
+    D --> S2[🛡️ AgenteOwasp]
+    D --> S3[⚡ AgentePerformance]
+    D --> S4[🧹 AgenteEstilo]
     S1 --> Y[🧠 AgenteSintetizador]
     S2 --> Y
-    S4 --> Y
     S3 --> Y
+    S4 --> Y
     D --> Y
-    Y --> R[Markdown review<br/>verdict + findings]
+    Y --> R[Revisão em Markdown<br/>veredito + problemas]
 ```
 
-| Agent | Responsibility |
+| Agente | Responsabilidade |
 |---|---|
-| **AgenteSeguranca** | Injection, hardcoded secrets, auth flaws, sensitive data exposure |
-| **AgenteOwasp** | Audits the diff against each OWASP Top 10:2025 category (A01–A10) and tags findings with the category |
-| **AgentePerformance** | N+1 queries, sync-over-async, allocations, missing cancellation |
-| **AgenteEstilo** | Naming, swallowed exceptions, dead code, maintainability |
-| **AgenteSintetizador** | Merges duplicates, discards false positives, ranks by severity, decides the verdict |
+| **AgenteSeguranca** | Injeção, segredos no código, falhas de autenticação, exposição de dados sensíveis |
+| **AgenteOwasp** | Audita o diff contra cada categoria do OWASP Top 10:2025 (A01–A10) e marca cada problema com a categoria |
+| **AgentePerformance** | Consultas N+1, sync-over-async, alocações desnecessárias, falta de CancellationToken |
+| **AgenteEstilo** | Nomenclatura, exceções engolidas, código morto, manutenibilidade |
+| **AgenteSintetizador** | Une duplicatas, descarta falsos positivos, ordena por severidade e decide o veredito |
 
-Design highlights:
+Destaques do design:
 
-- **OWASP-aware**: a dedicated agent maps every vulnerability to its OWASP Top 10:2025 category and suggests the OWASP-recommended mitigation.
+- **Orquestração fan-out / fan-in**: os especialistas rodam em paralelo; o sintetizador roda quando todos terminam.
+- **Alinhado ao OWASP**: um agente dedicado mapeia cada vulnerabilidade para sua categoria do OWASP Top 10:2025 e sugere a mitigação recomendada pela OWASP.
+- **Saída estruturada**: cada agente retorna JSON tipado (`ReviewFinding`, `ReviewReport`) em vez de texto livre.
+- **OpenAI por padrão, independente de provedor**: construído sobre `Microsoft.Extensions.AI.IChatClient`, então também roda com Ollama (local) ou Anthropic Claude.
+- **Revisões em português**: os papéis e instruções dos agentes estão em português, assim como a revisão gerada.
+- **Testes determinísticos**: a orquestração é testada com um `IChatClient` fake, sem chamar nenhum LLM.
 
-- **Fan-out / fan-in orchestration**: specialists run concurrently; the synthesizer runs once all are done.
-- **Structured output**: every agent returns typed JSON (`ReviewFinding`, `ReviewReport`) instead of free text.
-- **OpenAI by default, provider-agnostic by design**: built on `Microsoft.Extensions.AI.IChatClient`, so it can also run on Ollama (local) or Anthropic Claude.
-- **Reviews in Brazilian Portuguese**: agent roles and instructions are written in Portuguese, and so is the generated review.
-- **Deterministic tests**: the orchestration is tested with a fake `IChatClient`, without calling any LLM.
+## Como usar
 
-## Getting started
-
-Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download) and an [OpenAI API key](https://platform.openai.com/api-keys).
+Requisitos: [.NET 10 SDK](https://dotnet.microsoft.com/download) e uma [chave da API da OpenAI](https://platform.openai.com/api-keys).
 
 ```bash
 git clone https://github.com/Cosmess/code-review-crew.git
 cd code-review-crew
 
-# OpenAI (default)
+# OpenAI (padrão)
 export OPENAI_API_KEY=sk-...
 dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 
-# Alternative: local model with Ollama (no API key)
+# Alternativa: modelo local com Ollama (sem chave de API)
 CRC_PROVIDER=ollama dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 
-# Alternative: Anthropic Claude
+# Alternativa: Anthropic Claude
 CRC_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... \
   dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff
 ```
 
-You can also pipe any diff into it:
+Também é possível enviar qualquer diff pela entrada padrão:
 
 ```bash
 git diff main | dotnet run --project src/CodeReviewCrew.Cli
 ```
 
-### Configuration
+### Configuração
 
-| Variable | Default | Description |
+| Variável | Padrão | Descrição |
 |---|---|---|
-| `CRC_PROVIDER` | `openai` | `openai`, `ollama` or `anthropic` |
-| `CRC_MODEL` | `gpt-5-mini` (OpenAI) | Model id (e.g. `gpt-5-mini`, `qwen3:8b`, `claude-sonnet-5-5`) |
-| `OLLAMA_ENDPOINT` | `http://localhost:11434` | Ollama server URL |
-| `OPENAI_API_KEY` | | OpenAI API key (required for the default provider) |
-| `ANTHROPIC_API_KEY` | | Anthropic API key, when `CRC_PROVIDER=anthropic` |
+| `CRC_PROVIDER` | `openai` | `openai`, `ollama` ou `anthropic` |
+| `CRC_MODEL` | `gpt-5-mini` (OpenAI) | Id do modelo (ex.: `gpt-5-mini`, `qwen3:8b`, `claude-sonnet-5-5`) |
+| `OLLAMA_ENDPOINT` | `http://localhost:11434` | URL do servidor Ollama |
+| `OPENAI_API_KEY` | | Chave da API da OpenAI (obrigatória no provedor padrão) |
+| `ANTHROPIC_API_KEY` | | Chave da API da Anthropic, quando `CRC_PROVIDER=anthropic` |
 
-## Project structure
+## Estrutura do projeto
 
 ```
 src/
-  CodeReviewCrew.Core/     agents, orchestration, models, Markdown rendering
-  CodeReviewCrew.Cli/      command-line entry point and LLM provider selection
+  CodeReviewCrew.Core/     agentes, orquestração, modelos e renderização em Markdown
+  CodeReviewCrew.Cli/      ponto de entrada da linha de comando e seleção do provedor de LLM
 tests/
-  CodeReviewCrew.Tests/    xUnit tests with a fake chat client
+  CodeReviewCrew.Tests/    testes xUnit com um chat client fake
 samples/
-  vulnerable.diff          example PR with security, performance and style issues
+  vulnerable.diff          PR de exemplo com problemas de segurança, performance e estilo
 ```
 
-## Running the tests
+## Rodando os testes
 
 ```bash
 dotnet test
@@ -99,12 +98,12 @@ dotnet test
 
 ## Roadmap
 
-- [ ] GitHub integration: fetch a PR by number and post the review as a comment
-- [ ] GitHub Action to run the crew on every pull request
-- [ ] .NET Aspire AppHost with OpenTelemetry traces of each agent
-- [ ] MCP tools so agents can read full files and repository conventions
-- [ ] Evaluation suite measuring precision/recall on labeled diffs
+- [ ] Integração com GitHub: buscar um PR pelo número e publicar a revisão como comentário
+- [ ] GitHub Action para rodar a equipe de agentes em todo pull request
+- [ ] AppHost do .NET Aspire com traces OpenTelemetry de cada agente
+- [ ] Ferramentas MCP para os agentes lerem arquivos completos e convenções do repositório
+- [ ] Suíte de avaliação medindo precisão/recall em diffs rotulados
 
-## License
+## Licença
 
 [MIT](LICENSE)
