@@ -32,6 +32,12 @@ public static partial class DiffParser
         for (var i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
+            // A new file header always ends the current hunk, even if its line counts were wrong.
+            if (line.StartsWith("diff --git ", StringComparison.Ordinal))
+            {
+                oldRemaining = newRemaining = 0;
+            }
+
             var inHunk = oldRemaining > 0 || newRemaining > 0;
 
             if (inHunk)

@@ -88,6 +88,25 @@ public class DiffParserTests
     }
 
     [Fact]
+    public void A_git_header_ends_a_hunk_with_wrong_line_counts()
+    {
+        const string diff = """
+            diff --git a/One.cs b/One.cs
+            --- a/One.cs
+            +++ b/One.cs
+            @@ -1,5 +1,5 @@
+            +only one line
+            diff --git a/Two.cs b/Two.cs
+            --- a/Two.cs
+            +++ b/Two.cs
+            @@ -0,0 +1 @@
+            +b
+            """;
+
+        Assert.Equal(["One.cs", "Two.cs"], DiffParser.Parse(diff).Select(f => f.Path));
+    }
+
+    [Fact]
     public void Chunker_groups_files_and_truncates_oversized_ones()
     {
         var small = new DiffFile("a.cs", new string('a', 600), new HashSet<int>());

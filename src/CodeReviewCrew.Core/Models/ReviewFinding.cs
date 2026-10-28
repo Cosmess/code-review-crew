@@ -24,4 +24,5 @@ public sealed record ReviewFinding(
 /// <summary>Structured output returned by each specialist agent.</summary>
 public sealed record SpecialistFindings(List<ReviewFinding> Findings);
 
-public sealed record SpecialistReport(string Agent, IReadOnlyList<ReviewFinding> Findings);
+/// <param name="Error">Set when the agent failed on at least one part of the diff after every retry.</param>
+public sealed record SpecialistReport(string Agent, IReadOnlyList<ReviewFinding> Findings, string? Error = null);
