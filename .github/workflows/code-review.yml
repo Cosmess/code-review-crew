@@ -1,0 +1,48 @@
+name: Code Review Crew
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Secrets are not available on pull requests from forks: skip instead of failing.
+      - name: Verificar a chave da OpenAI
+        id: key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Secret OPENAI_API_KEY não configurado: revisão ignorada."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Revisar com o Code Review Crew
+        if: steps.key.outputs.available == 'true'
+        uses: ./
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sarif-file: code-review-crew.sarif
+
+      - name: Enviar SARIF para o code scanning
+        if: always() && steps.key.outputs.available == 'true' && hashFiles('code-review-crew.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: code-review-crew.sarif
+          category: code-review-crew

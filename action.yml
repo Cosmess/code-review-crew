@@ -1,0 +1,63 @@
+name: Code Review Crew
+description: Revisão de pull requests com uma equipe de agentes de IA (segurança, OWASP Top 10, performance e estilo).
+author: Cosme Sousa
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  openai-api-key:
+    description: Chave da API da OpenAI.
+    required: true
+  github-token:
+    description: Token usado para ler o pull request e publicar a revisão.
+    default: ${{ github.token }}
+  model:
+    description: Modelo da OpenAI.
+    default: gpt-5-mini
+  config:
+    description: Caminho do arquivo de configuração do Code Review Crew.
+    default: .crc.yml
+  post-review:
+    description: Publica a revisão no pull request, com comentários inline.
+    default: "true"
+  sarif-file:
+    description: Se informado, salva os problemas em SARIF neste caminho (para enviar ao code scanning).
+    default: ""
+  fail-on:
+    description: Falha o job se houver problema desta severidade ou maior (Low, Medium, High, Critical).
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Revisar o pull request
+      shell: bash
+      # Inputs go through environment variables, never interpolated into the script, to avoid script injection.
+      env:
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CRC_PROVIDER: openai
+        CRC_MODEL: ${{ inputs.model }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        CRC_CONFIG: ${{ inputs.config }}
+        CRC_POST: ${{ inputs.post-review }}
+        CRC_SARIF: ${{ inputs.sarif-file }}
+        CRC_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        if [ -z "$PR_NUMBER" ]; then
+          echo "::error::O Code Review Crew precisa rodar em eventos pull_request."
+          exit 1
+        fi
+
+        args=(--pr "$PR_NUMBER" --repo "$GITHUB_REPOSITORY")
+        if [ "$CRC_POST" = "true" ]; then args+=(--post); fi
+        if [ -f "$CRC_CONFIG" ]; then args+=(--config "$CRC_CONFIG"); fi
+        if [ -n "$CRC_SARIF" ]; then args+=(--sarif "$CRC_SARIF"); fi
+        if [ -n "$CRC_FAIL_ON" ]; then args+=(--fail-on "$CRC_FAIL_ON"); fi
+
+        dotnet run --project "$GITHUB_ACTION_PATH/src/CodeReviewCrew.Cli" -c Release -- "${args[@]}"
