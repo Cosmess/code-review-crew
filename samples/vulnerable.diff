@@ -1,0 +1,37 @@
+diff --git a/src/Api/Controllers/UsersController.cs b/src/Api/Controllers/UsersController.cs
+--- a/src/Api/Controllers/UsersController.cs
++++ b/src/Api/Controllers/UsersController.cs
+@@ -1,20 +1,34 @@
+ using Microsoft.AspNetCore.Mvc;
+ using Microsoft.Data.SqlClient;
+ 
+ namespace Api.Controllers;
+ 
+ [ApiController]
+ [Route("api/users")]
+ public class UsersController : ControllerBase
+ {
+-    private readonly string _connectionString;
++    private const string ConnectionString = "Server=prod-db;User Id=sa;Password=P@ssw0rd123;";
+ 
+     [HttpGet("search")]
+-    public async Task<IActionResult> Search(string name, CancellationToken ct)
++    public IActionResult Search(string name)
+     {
+-        // TODO
+-        return Ok();
++        using var conn = new SqlConnection(ConnectionString);
++        conn.Open();
++        var cmd = new SqlCommand($"SELECT * FROM Users WHERE Name LIKE '%{name}%'", conn);
++        var reader = cmd.ExecuteReaderAsync().Result;
++        var users = new List<object>();
++        while (reader.Read())
++        {
++            var id = (int)reader["Id"];
++            var orders = new SqlCommand($"SELECT * FROM Orders WHERE UserId = {id}", conn).ExecuteReader();
++            users.Add(new { Id = id, Name = reader["Name"], Password = reader["PasswordHash"], Orders = orders });
++        }
++        try { System.IO.File.AppendAllText("log.txt", name); } catch { }
++        return Ok(users);
+     }
+ }

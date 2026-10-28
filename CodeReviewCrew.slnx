@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodeReviewCrew.Cli/CodeReviewCrew.Cli.csproj" />
+    <Project Path="src/CodeReviewCrew.Core/CodeReviewCrew.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodeReviewCrew.Tests/CodeReviewCrew.Tests.csproj" />
+  </Folder>
+</Solution>
