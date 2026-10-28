@@ -4,6 +4,7 @@
     <Project Path="src/CodeReviewCrew.Core/CodeReviewCrew.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CodeReviewCrew.IntegrationTests/CodeReviewCrew.IntegrationTests.csproj" />
     <Project Path="tests/CodeReviewCrew.Tests/CodeReviewCrew.Tests.csproj" />
   </Folder>
 </Solution>

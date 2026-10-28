@@ -15,4 +15,20 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
-      - run: dotnet test --no-build -c Release --verbosity normal
+      - name: Testes unitários
+        run: dotnet test tests/CodeReviewCrew.Tests --no-build -c Release --verbosity normal
+
+  # Calls the real OpenAI API, so it only runs on main and when the secret exists.
+  integration:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Testes de integração com a OpenAI
+        run: dotnet test tests/CodeReviewCrew.IntegrationTests -c Release --verbosity normal
