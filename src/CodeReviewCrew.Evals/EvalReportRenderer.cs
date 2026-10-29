@@ -54,5 +54,5 @@ public static class EvalReportRenderer
         return md.ToString();
     }
 
-    private static string Percent(double value) => value.ToString("P0", CultureInfo.InvariantCulture);
+    private static string Percent(double value) => $"{(value * 100).ToString("0", CultureInfo.InvariantCulture)}%";
 }
