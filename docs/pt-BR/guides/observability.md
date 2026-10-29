@@ -1,5 +1,7 @@
 # Observabilidade com OpenTelemetry e .NET Aspire
 
+[English](../../en/guides/observability.md) | **Português** | [简体中文](../../zh-CN/guides/observability.md)
+
 ## Rodando com o dashboard do Aspire
 
 ```bash
@@ -24,14 +26,14 @@ dotnet run --project src/CodeReviewCrew.AppHost -- --Review:Diff=/caminho/do/arq
 
 ```
 code_review                              veredito, problemas, tokens
-├── invoke_agent AgenteSeguranca         problemas encontrados
+├── invoke_agent SecurityAgent           problemas encontrados
 │   └── chat gpt-5-mini                  tokens da chamada
-├── invoke_agent AgenteOwasp
+├── invoke_agent OwaspAgent
 │   ├── chat gpt-5-mini                  pede a ferramenta read_file
 │   └── chat gpt-5-mini                  responde com o arquivo lido
-├── invoke_agent AgentePerformance       evento "retry" se uma tentativa falhou
-├── invoke_agent AgenteEstilo
-└── invoke_agent AgenteSintetizador
+├── invoke_agent PerformanceAgent        evento "retry" se uma tentativa falhou
+├── invoke_agent StyleAgent
+└── invoke_agent SynthesizerAgent
 ```
 
 Os quatro especialistas aparecem em paralelo na linha do tempo; o sintetizador começa quando todos terminam.
@@ -44,8 +46,8 @@ Prompts e código **não** são registrados nos spans.
 
 ## Usando outro coletor
 
-A CLI exporta via OTLP sempre que `OTEL_EXPORTER_OTLP_ENDPOINT` está definida, então funciona com Jaeger,
-Grafana, Honeycomb ou qualquer coletor OpenTelemetry:
+A CLI exporta via OTLP sempre que `OTEL_EXPORTER_OTLP_ENDPOINT` está definida, então funciona com Jaeger, Grafana,
+Honeycomb ou qualquer coletor OpenTelemetry:
 
 ```bash
 docker run -d -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one

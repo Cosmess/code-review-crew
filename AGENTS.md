@@ -1,84 +1,90 @@
 # AGENTS.md
 
-Instruções para agentes de IA (Claude Code, Codex, Copilot, Cursor etc.) que trabalham neste repositório.
-Leia este arquivo inteiro antes de alterar qualquer coisa. Os detalhes estão em [`docs/`](docs/README.md).
+Instructions for AI agents (Claude Code, Codex, Copilot, Cursor, etc.) working on this repository.
+Read this whole file before changing anything. Details are in [`docs/`](docs/en/README.md).
 
-## O que é o projeto
+## What the project is
 
-O **Code Review Crew** é um revisor de pull requests feito com uma equipe de agentes de IA em .NET 10.
-Agentes especialistas (segurança, OWASP Top 10, performance, estilo) analisam o diff em paralelo, e um
-agente sintetizador consolida tudo em uma revisão, publicada no PR com comentários inline e em SARIF.
+**Code Review Crew** reviews pull requests with a crew of AI agents in .NET 10. Specialist agents (security,
+OWASP Top 10, performance, style) analyze the diff in parallel and a synthesizer agent consolidates everything into a
+review, posted on the PR with inline comments and as SARIF. Reviews can be written in English, Portuguese or Chinese.
+It is published as a GitHub Action.
 
-## Comandos
+## Commands
 
 ```bash
-dotnet build                                   # compila a solução
-dotnet test tests/CodeReviewCrew.Tests         # testes unitários (rápidos, sem rede)
-dotnet test                                    # tudo; os de integração são ignorados sem OPENAI_API_KEY
-dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff   # revisão real (precisa de OPENAI_API_KEY)
+dotnet build                                   # builds the solution
+dotnet test tests/CodeReviewCrew.Tests         # unit tests (fast, no network)
+dotnet test                                    # everything; integration tests are skipped without OPENAI_API_KEY
+dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff   # real review (needs OPENAI_API_KEY)
 dotnet run --project src/CodeReviewCrew.Cli -- --help
-dotnet run --project src/CodeReviewCrew.AppHost                          # Aspire: traces de cada agente no dashboard
-dotnet run --project src/CodeReviewCrew.Evals                            # avaliação com métricas (precisa de OPENAI_API_KEY)
+dotnet run --project src/CodeReviewCrew.AppHost                          # Aspire: per-agent traces in the dashboard
+dotnet run --project src/CodeReviewCrew.Evals                            # evaluation metrics (needs OPENAI_API_KEY)
 ```
 
-## Regras obrigatórias
+## Mandatory rules
 
-1. **Commits em Conventional Commits, em português.** Ex.: `feat(agentes): adiciona agente de acessibilidade`.
-   Tipos: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `ci`, `chore`. Corpo explica o porquê.
-2. **Nenhuma atribuição a IA** em commits ou PRs: sem `Co-Authored-By` de assistentes, sem "Generated with ...".
-   Os commits saem com a identidade git configurada na máquina.
-3. **Idioma:** identificadores e comentários de código em inglês; tudo que o usuário final lê (prompts dos
-   agentes, mensagens da CLI, revisão em Markdown, erros) em português do Brasil. Veja [padrões de código](docs/padroes-de-codigo.md).
-4. **Testes acompanham toda mudança de comportamento.** Testes unitários nunca chamam LLM nem rede:
-   use `FakeChatClient` e `FakeHttpHandler`. Rode `dotnet test` antes de cada commit; todos devem passar.
-5. **O Core não depende de provedor de LLM.** `CodeReviewCrew.Core` só conhece `IChatClient`
-   (`Microsoft.Extensions.AI`). SDKs de OpenAI, Anthropic e Ollama ficam em `CodeReviewCrew.Providers`.
-6. **Uma falha de agente nunca derruba a revisão.** Toda chamada a modelo passa pelo `RetryPolicy`; erros
-   viram `SpecialistReport.Error` ou o fallback do sintetizador. Não propague exceções de LLM para o usuário.
-7. **Segredos só por variável de ambiente.** Nunca escreva chaves em código, testes, exemplos ou logs.
-8. **Mudou comportamento visível? Atualize o README** e, se for decisão de arquitetura, crie um ADR em `docs/adr/`.
-9. **Ferramentas dadas a agentes são somente leitura e confinadas.** O conteúdo de um PR é não confiável e pode
-   tentar manipular o modelo. Toda ferramenta nova segue o modelo do `RepositoryReader` (sem sair da raiz, sem
-   links simbólicos, sem `.git` nem arquivos de segredos), tem testes de ataque e servidores MCP nunca herdam
-   variáveis de ambiente.
-10. **Mudou prompts ou agentes? Rode a avaliação** (`src/CodeReviewCrew.Evals`) e compare precisão e recall
-    antes e depois. Novos tipos de problema ganham um caso em `evals/casos/`.
+1. **Commit messages follow Conventional Commits and are written in Brazilian Portuguese** (maintainer preference).
+   E.g. `feat(agentes): adiciona agente de acessibilidade`. Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`,
+   `ci`, `chore`. The body explains why.
+2. **No AI attribution** in commits or PRs: no `Co-Authored-By` lines for assistants, no "Generated with ...".
+   Commits use the git identity configured on the machine.
+3. **Languages:** code, comments, agent instructions, CLI messages and errors in English. Text the crew writes into a
+   review goes through `ReviewStrings` and must exist in every supported language (`en`, `pt-BR`, `zh-CN`).
+   See [coding standards](docs/en/coding-standards.md).
+4. **Documentation exists in three languages.** When behavior changes, update `README.md`, `README.pt-BR.md`,
+   `README.zh-CN.md` and the matching pages in `docs/en`, `docs/pt-BR` and `docs/zh-CN`. ADRs are English only.
+5. **Tests come with every behavior change.** Unit tests never call an LLM or the network: use `FakeChatClient` and
+   `FakeHttpHandler`. Run `dotnet test` before every commit; everything must pass.
+6. **Core does not depend on an LLM provider.** `CodeReviewCrew.Core` only knows `IChatClient`
+   (`Microsoft.Extensions.AI`). OpenAI, Anthropic and Ollama SDKs live in `CodeReviewCrew.Providers`.
+7. **An agent failure never takes the review down.** Every model call goes through `RetryPolicy`; errors become
+   `SpecialistReport.Error` or the synthesizer fallback. Do not propagate LLM exceptions to the user.
+8. **Secrets only through environment variables.** Never write keys in code, tests, samples, eval cases or logs, not even
+   fake keys in a real provider's format (GitHub push protection blocks them).
+9. **Tools given to agents are read-only and confined.** Pull request content is untrusted and may try to manipulate
+   the model. Every new tool follows the `RepositoryReader` model (no leaving the root, no symbolic links, no `.git` or
+   secret files), has attack tests, and MCP servers never inherit environment variables.
+10. **Changed prompts or agents? Run the evaluation** (`src/CodeReviewCrew.Evals`) and compare precision and recall
+    before and after. New kinds of issues get a case in `evals/cases/`.
+11. **Changed visible behavior? Update the docs**, and for an architecture decision add an ADR in `docs/adr/`.
 
-## Mapa do código
+## Code map
 
-| Caminho | Responsabilidade |
+| Path | Responsibility |
 |---|---|
-| `src/CodeReviewCrew.Core/Agents/` | Definição dos agentes (`Crew.cs`): papel, descrição e instruções |
-| `src/CodeReviewCrew.Core/Orchestration/` | `ReviewOrchestrator` (fan-out/fan-in), `RetryPolicy`, contagem de tokens |
-| `src/CodeReviewCrew.Core/Diff/` | Parser de diff unificado e divisão em partes |
+| `src/CodeReviewCrew.Core/Agents/` | Agent definitions (`Crew.cs`): role, description and instructions |
+| `src/CodeReviewCrew.Core/Orchestration/` | `ReviewOrchestrator` (fan-out/fan-in), `RetryPolicy`, token usage |
+| `src/CodeReviewCrew.Core/Diff/` | Unified diff parser and chunking |
 | `src/CodeReviewCrew.Core/Configuration/` | `.crc.yml` (`CrewConfig`) |
-| `src/CodeReviewCrew.Core/GitHub/` | Cliente REST do GitHub e publicação da revisão com comentários inline |
-| `src/CodeReviewCrew.Core/Rendering/` | Saídas em Markdown e SARIF |
-| `src/CodeReviewCrew.Core/Telemetry/` | `ActivitySource` e métricas OpenTelemetry (`CrewTelemetry`) |
-| `src/CodeReviewCrew.Providers/` | `ChatClientFactory`: cliente de LLM por provedor, com OpenTelemetry |
-| `src/CodeReviewCrew.Cli/` | Linha de comando (System.CommandLine), servidores MCP (`McpToolHost`) e exportação OTLP |
-| `src/CodeReviewCrew.McpServer/` | Servidor MCP stdio com as ferramentas somente leitura do repositório |
-| `src/CodeReviewCrew.AppHost/` | AppHost do .NET Aspire |
-| `src/CodeReviewCrew.Evals/` | Runner da avaliação e cálculo de precisão/recall |
-| `evals/casos/` | Pull requests rotulados (`diff.patch` + `esperado.json`) |
-| `tests/CodeReviewCrew.Tests/` | Testes unitários (inclui o protocolo MCP real e a consistência do dataset) |
-| `tests/CodeReviewCrew.IntegrationTests/` | Testes com a API real da OpenAI |
-| `action.yml` | GitHub Action composta |
+| `src/CodeReviewCrew.Core/Localization/` | Review languages and translated strings (`ReviewLanguage`, `ReviewStrings`) |
+| `src/CodeReviewCrew.Core/GitHub/` | GitHub REST client and review publishing with inline comments |
+| `src/CodeReviewCrew.Core/Rendering/` | Markdown and SARIF outputs |
+| `src/CodeReviewCrew.Core/Telemetry/` | OpenTelemetry `ActivitySource` and metrics (`CrewTelemetry`) |
+| `src/CodeReviewCrew.Providers/` | `ChatClientFactory`: LLM client per provider, with OpenTelemetry |
+| `src/CodeReviewCrew.Cli/` | Command line (System.CommandLine), MCP servers (`McpToolHost`) and OTLP export |
+| `src/CodeReviewCrew.McpServer/` | Stdio MCP server with the read-only repository tools |
+| `src/CodeReviewCrew.AppHost/` | .NET Aspire AppHost |
+| `src/CodeReviewCrew.Evals/` | Evaluation runner and precision/recall scoring |
+| `evals/cases/` | Labeled pull requests (`diff.patch` + `expected.json`) |
+| `tests/CodeReviewCrew.Tests/` | Unit tests (including the real MCP protocol and dataset consistency) |
+| `tests/CodeReviewCrew.IntegrationTests/` | Tests against the real OpenAI API |
+| `action.yml` | Composite GitHub Action |
 
-## Guias para tarefas comuns
+## Guides for common tasks
 
-- [Arquitetura](docs/arquitetura.md): fluxo completo e por que cada peça existe
-- [Padrões de código](docs/padroes-de-codigo.md)
-- [Testes](docs/testes.md)
-- [Como adicionar um novo agente](docs/guias/adicionar-agente.md)
-- [Usando a GitHub Action](docs/guias/github-action.md)
-- [Observabilidade com Aspire](docs/guias/observabilidade.md)
-- [Avaliação e como adicionar casos](evals/README.md)
-- [Decisões de arquitetura (ADRs)](docs/adr/)
+- [Architecture](docs/en/architecture.md): the whole flow and why each piece exists
+- [Coding standards](docs/en/coding-standards.md)
+- [Testing](docs/en/testing.md)
+- [Adding an agent](docs/en/guides/adding-an-agent.md)
+- [GitHub Action](docs/en/guides/github-action.md)
+- [Observability with Aspire](docs/en/guides/observability.md)
+- [Evaluation and adding cases](evals/README.md)
+- [Architecture decision records](docs/adr/README.md)
 
-## Antes de encerrar uma tarefa
+## Before finishing a task
 
-- [ ] `dotnet build` sem erros nem novos warnings
-- [ ] `dotnet test` passando
-- [ ] README/docs atualizados se o comportamento mudou
-- [ ] Commit no padrão Conventional Commits, em português, sem atribuição a IA
+- [ ] `dotnet build` without errors or new warnings
+- [ ] `dotnet test` passing
+- [ ] README and docs updated in the three languages if behavior changed
+- [ ] Commit following Conventional Commits, in Portuguese, without AI attribution

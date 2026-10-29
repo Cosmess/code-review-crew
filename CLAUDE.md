@@ -1,3 +1,3 @@
-As regras e padrões deste repositório estão em AGENTS.md, que vale para qualquer agente de IA.
+The rules and standards of this repository are in AGENTS.md, which applies to every AI agent.
 
 @AGENTS.md

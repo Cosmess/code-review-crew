@@ -1,79 +1,81 @@
-# Avaliação
+# Evaluation
 
-Conjunto de pull requests rotulados para medir a qualidade das revisões.
-Cada caso tem o diff e os problemas que uma boa revisão precisa encontrar.
+**English** | [Português](README.pt-BR.md) | [简体中文](README.zh-CN.md)
 
-## Rodando
+A set of labeled pull requests to measure review quality. Each case has a diff and the issues a good review must find.
+
+## Running
 
 ```bash
 export OPENAI_API_KEY=sk-...
-dotnet run --project src/CodeReviewCrew.Evals                         # todos os casos
-dotnet run --project src/CodeReviewCrew.Evals -- --filtro sql         # só os casos com "sql" no nome
-dotnet run --project src/CodeReviewCrew.Evals -- --output relatorio.md --min-recall 0.8
+dotnet run --project src/CodeReviewCrew.Evals                              # every case, reviews in English
+dotnet run --project src/CodeReviewCrew.Evals -- --filter sql              # only cases with "sql" in the name
+dotnet run --project src/CodeReviewCrew.Evals -- --language pt-BR          # reviews in Portuguese
+dotnet run --project src/CodeReviewCrew.Evals -- --output report.md --min-recall 0.8
 ```
 
-No GitHub, rode o workflow **Avaliação** em Actions → Avaliação → Run workflow. O relatório aparece no
-resumo da execução e como artefato.
+On GitHub, run the **Evaluation** workflow (*Actions → Evaluation → Run workflow*). The report appears in the run
+summary and as an artifact.
 
-## Métricas
+## Metrics
 
-| Métrica | Como é calculada |
+| Metric | How it is computed |
 |---|---|
-| **Recall** | Problemas esperados encontrados / problemas esperados |
-| **Precisão** | Acertos / (acertos + falsos positivos) |
-| **F1** | Média harmônica de precisão e recall |
-| **Vereditos corretos** | `RequestChanges` quando o caso deve bloquear, outro veredito quando não deve |
-| **Severidade subestimada** | Problemas encontrados com severidade abaixo da mínima esperada |
+| **Recall** | Expected issues found / expected issues |
+| **Precision** | Matches / (matches + false positives) |
+| **F1** | Harmonic mean of precision and recall |
+| **Correct verdicts** | `RequestChanges` when the case should block, another verdict when it should not |
+| **Underrated severity** | Issues found with a severity below the expected minimum |
 
-Um problema da revisão **corresponde** a um esperado quando está no mesmo arquivo, a até `tolerancia`
-linhas de distância, e cita uma das `palavrasChave` (sem diferenciar maiúsculas nem acentos) ou uma das
-categorias `owasp` no título (ex.: `[A05:2025 ...]`). Cada problema conta para no máximo um esperado.
+A finding **matches** an expected issue when it is in the same file, at most `tolerance` lines away, and mentions one
+of the `keywords` (case- and accent-insensitive) or one of the `owasp` categories in its title (e.g. `[A05:2025 ...]`).
+Keywords are given in English, Portuguese and Chinese so the evaluation works in every review language.
+Each finding counts for at most one expected issue.
 
-Problemas que não correspondem a nada só contam como **falso positivo** se forem `Medium` ou mais graves.
-Achados `Low`/`Info` extras (estilo, nomes) são tratados como ruído aceitável.
+Findings that match nothing only count as **false positives** when they are `Medium` or more severe.
+Extra `Low`/`Info` findings (style, naming) are treated as acceptable noise.
 
-## Casos
+## Cases
 
-| Caso | O que testa |
+| Case | What it tests |
 |---|---|
-| `sql-injection` | SQL montado por concatenação |
-| `segredo-no-codigo` | Chave de API de produção no código |
-| `sync-over-async` | `.Result` em controller |
-| `consulta-n-mais-1` | Consulta ao banco dentro de laço |
-| `path-traversal` | Nome de arquivo da URL usado sem validação |
-| `desserializacao-insegura` | `TypeNameHandling.All` |
-| `hash-de-senha-fraco` | MD5 para senhas |
-| `idor-sem-checagem-de-dono` | Recurso retornado sem checar o dono |
-| `excecao-engolida` | `catch` vazio |
-| `sql-injection-com-log-de-senha` | Dois problemas no mesmo arquivo |
-| `limpo-consulta-parametrizada` | Mudança segura: não deve gerar alarmes |
-| `limpo-documentacao` | Refatoração de nomes e docs: não deve gerar alarmes |
+| `sql-injection` | SQL built by concatenation |
+| `hardcoded-secret` | Production API key in the code |
+| `sync-over-async` | `.Result` in a controller |
+| `n-plus-one-query` | Database query inside a loop |
+| `path-traversal` | File name from the URL used without validation |
+| `insecure-deserialization` | `TypeNameHandling.All` |
+| `weak-password-hash` | MD5 for passwords |
+| `idor-missing-ownership-check` | Resource returned without checking its owner |
+| `swallowed-exception` | Empty `catch` |
+| `sql-injection-and-password-logging` | Two issues in the same file |
+| `clean-parameterized-query` | Safe change: must not raise alarms |
+| `clean-documentation` | Renames and docs: must not raise alarms |
 
-## Adicionando um caso
+## Adding a case
 
-1. Crie `evals/casos/<nome-do-caso>/`.
-2. Gere o `diff.patch` com o git, para que os cabeçalhos dos hunks fiquem corretos:
+1. Create `evals/cases/<case-name>/`.
+2. Generate `diff.patch` with git, so the hunk headers are correct:
    ```bash
-   git diff main -- caminho/do/arquivo.cs > evals/casos/<nome-do-caso>/diff.patch
+   git diff main -- path/to/File.cs > evals/cases/<case-name>/diff.patch
    ```
-3. Escreva o `esperado.json`:
+3. Write `expected.json`:
    ```json
    {
-     "descricao": "O que o caso testa.",
-     "deveBloquear": true,
-     "problemas": [
+     "description": "What the case tests.",
+     "shouldBlock": true,
+     "findings": [
        {
-         "arquivo": "src/Api/Controller.cs",
-         "linha": 14,
-         "tolerancia": 2,
-         "palavrasChave": ["traversal", "caminho"],
+         "file": "src/Api/Controller.cs",
+         "line": 14,
+         "tolerance": 2,
+         "keywords": ["traversal", "path", "caminho", "路径"],
          "owasp": ["A01"],
-         "severidadeMinima": "High"
+         "minSeverity": "High"
        }
      ]
    }
    ```
-   `linha` é a linha na **nova** versão do arquivo. `deveBloquear` deve ser `true` se e somente se
-   algum problema tiver `severidadeMinima` `High` ou `Critical`.
-4. Rode `dotnet test`: o teste `Every_labeled_case_in_the_dataset_is_consistent` confere se o arquivo e a
-   linha existem no diff.
+   `line` is the line in the **new** version of the file. `shouldBlock` must be `true` if and only if some issue
+   has a `minSeverity` of `High` or `Critical`.
+4. Run `dotnet test`: `Every_labeled_case_in_the_dataset_is_consistent` checks that the file and line exist in the diff.

@@ -1,19 +1,19 @@
-# ADR 0001: Microsoft Agent Framework e Microsoft.Extensions.AI
+# ADR 0001: Microsoft Agent Framework and Microsoft.Extensions.AI
 
-**Status:** aceita
+**Status:** accepted
 
-## Contexto
+## Context
 
-O projeto precisa de agentes com instruções próprias, saída estruturada e liberdade para trocar de provedor de LLM.
+The project needs agents with their own instructions, structured output and freedom to switch LLM providers.
 
-## Decisão
+## Decision
 
-Usar o **Microsoft Agent Framework** (`ChatClientAgent`, `RunAsync<T>`) sobre a abstração `IChatClient` do
-**Microsoft.Extensions.AI**. O Core só conhece `IChatClient`; a CLI cria o cliente do provedor.
+Use the **Microsoft Agent Framework** (`ChatClientAgent`, `RunAsync<T>`) on top of the `IChatClient` abstraction
+from **Microsoft.Extensions.AI**. Core only knows `IChatClient`; `CodeReviewCrew.Providers` creates the provider client.
 
-## Consequências
+## Consequences
 
-- Trocar de provedor (OpenAI, Anthropic, Ollama) não toca no Core.
-- Testes usam um `IChatClient` fake, sem rede.
-- `RunAsync<T>` gera o JSON schema a partir dos tipos C#, eliminando parsing manual.
-- Ficamos acoplados à evolução da API do Agent Framework; as versões ficam fixas nos `.csproj`.
+- Switching providers (OpenAI, Anthropic, Ollama) does not touch Core.
+- Tests use a fake `IChatClient`, without network access.
+- `RunAsync<T>` generates the JSON schema from the C# types, removing manual parsing.
+- We are coupled to the evolution of the Agent Framework API; versions are pinned in the `.csproj` files.
