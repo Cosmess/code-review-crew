@@ -76,6 +76,19 @@ public class MarkdownRendererTests
         Assert.StartsWith("**🟠 Alto: Blocking call | sync**", MarkdownRenderer.RenderInlineComment(Blocking, "pt-BR"));
     }
 
+    [Fact]
+    public void Neutralizes_mentions_written_by_the_model()
+    {
+        var finding = new ReviewFinding(Severity.High, "src/A.cs", 3, "Unsafe @hash param", "Bind @email, ask @octocat.", "Use cmd.Parameters.Add(\"@hash\").");
+        var result = new CrewResult([], new ReviewReport("Ping @team", Verdict.Comment, [finding]), UsageSummary.Empty);
+
+        var markdown = MarkdownRenderer.Render(result) + MarkdownRenderer.RenderInlineComment(finding);
+
+        Assert.DoesNotMatch(@"(?<![\w`])@[A-Za-z0-9]", markdown);
+        Assert.Contains("@\u200Bhash", markdown);
+        Assert.Contains("user@example.com", MarkdownRenderer.Safe("user@example.com"));
+    }
+
     [Theory]
     [InlineData(null, "en")]
     [InlineData("PT-br", "pt-BR")]

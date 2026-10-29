@@ -1,11 +1,12 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 
 namespace CodeReviewCrew.Core.Rendering;
 
 /// <summary>Renders a review as Markdown, in the review's language, ready to be posted as a pull request comment.</summary>
-public static class MarkdownRenderer
+public static partial class MarkdownRenderer
 {
     /// <param name="postedInline">Findings already posted as inline comments; their details are not repeated in the body.</param>
     public static string Render(CrewResult result, IReadOnlySet<ReviewFinding>? postedInline = null)
@@ -18,7 +19,7 @@ public static class MarkdownRenderer
 
         md.AppendLine("## 🤖 Code Review Crew").AppendLine();
         md.AppendLine($"**{s.Verdict}:** {VerdictLabel(report.Verdict, s)}").AppendLine();
-        md.AppendLine(report.Summary).AppendLine();
+        md.AppendLine(Safe(report.Summary)).AppendLine();
 
         if (findings.Count == 0)
         {
@@ -30,7 +31,7 @@ public static class MarkdownRenderer
             foreach (var f in findings)
             {
                 var inline = postedInline?.Contains(f) == true ? " 💬" : "";
-                md.AppendLine($"| {SeverityLabel(f.Severity, s)} | {Location(f)}{inline} | {Escape(f.Title)} |");
+                md.AppendLine($"| {SeverityLabel(f.Severity, s)} | {Location(f)}{inline} | {Escape(Safe(f.Title))} |");
             }
 
             md.AppendLine();
@@ -41,7 +42,7 @@ public static class MarkdownRenderer
 
             foreach (var f in findings.Where(f => postedInline?.Contains(f) != true))
             {
-                md.AppendLine($"### {SeverityLabel(f.Severity, s)} {f.Title}").AppendLine();
+                md.AppendLine($"### {SeverityLabel(f.Severity, s)} {Safe(f.Title)}").AppendLine();
                 md.AppendLine($"{Location(f)}").AppendLine();
                 AppendDetails(md, f, s);
             }
@@ -54,7 +55,7 @@ public static class MarkdownRenderer
             md.AppendLine($"> {s.FailedAgentsWarning}");
             foreach (var r in failed)
             {
-                md.AppendLine($"> - **{r.Agent}**: {r.Error}");
+                md.AppendLine($"> - **{r.Agent}**: {Safe(r.Error!)}");
             }
 
             md.AppendLine();
@@ -77,7 +78,7 @@ public static class MarkdownRenderer
     {
         var s = ReviewLanguage.Parse(language).Strings;
         var md = new StringBuilder();
-        md.AppendLine($"**{SeverityLabel(finding.Severity, s)}: {finding.Title}**").AppendLine();
+        md.AppendLine($"**{SeverityLabel(finding.Severity, s)}: {Safe(finding.Title)}**").AppendLine();
         AppendDetails(md, finding, s);
         md.Append("<sub>Code Review Crew</sub>");
         return md.ToString();
@@ -94,10 +95,10 @@ public static class MarkdownRenderer
 
     private static void AppendDetails(StringBuilder md, ReviewFinding f, ReviewStrings s)
     {
-        md.AppendLine(f.Explanation).AppendLine();
+        md.AppendLine(Safe(f.Explanation)).AppendLine();
         if (!string.IsNullOrWhiteSpace(f.Suggestion))
         {
-            md.AppendLine($"**{s.Suggestion}:** {f.Suggestion}").AppendLine();
+            md.AppendLine($"**{s.Suggestion}:** {Safe(f.Suggestion)}").AppendLine();
         }
     }
 
@@ -121,4 +122,13 @@ public static class MarkdownRenderer
     };
 
     private static string Escape(string text) => text.Replace("|", "\\|");
+
+    /// <summary>
+    /// Model-written text often contains things like SQL parameters ("@hash") or decorators ("@Override") that GitHub
+    /// would turn into mentions of real users. A zero-width space after "@" keeps the text readable without notifying anyone.
+    /// </summary>
+    public static string Safe(string text) => Mention().Replace(text, "@\u200B$1");
+
+    [GeneratedRegex(@"(?<![\w`])@([A-Za-z0-9][A-Za-z0-9-]*)")]
+    private static partial Regex Mention();
 }
