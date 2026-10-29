@@ -1,0 +1,33 @@
+{
+  "description": "A production API key written directly in the code.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Infra/PaymentGatewayClient.cs",
+      "line": 7,
+      "tolerance": 2,
+      "keywords": [
+        "segredo",
+        "chave",
+        "api key",
+        "apikey",
+        "hardcoded",
+        "credencia",
+        "pgw_prod",
+        "embutid",
+        "secret",
+        "hard-coded",
+        "credential",
+        "密钥",
+        "硬编码",
+        "凭据"
+      ],
+      "owasp": [
+        "A02",
+        "A04",
+        "A07"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

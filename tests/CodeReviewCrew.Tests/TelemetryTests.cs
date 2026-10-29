@@ -40,7 +40,7 @@ public sealed class TelemetryTests : IDisposable
     [Fact]
     public async Task Creates_a_review_span_with_one_child_span_per_agent()
     {
-        var fake = new FakeChatClient(p => p.Contains("revisor líder")
+        var fake = new FakeChatClient(p => p.Contains("lead reviewer")
             ? """{"summary":"s","verdict":"RequestChanges","findings":[]}"""
             : Finding);
 
@@ -52,7 +52,7 @@ public sealed class TelemetryTests : IDisposable
         var agents = activities.Where(a => a.OperationName.StartsWith("invoke_agent")).ToList();
         Assert.Equal(5, agents.Count);
         Assert.All(agents, a => Assert.Equal(review.SpanId, a.ParentSpanId));
-        Assert.Contains(agents, a => (string?)a.GetTagItem("gen_ai.agent.name") == "AgenteOwasp");
+        Assert.Contains(agents, a => (string?)a.GetTagItem("gen_ai.agent.name") == "OwaspAgent");
         Assert.Equal("RequestChanges", review.GetTagItem("crc.verdict"));
         Assert.Equal(5000L, review.GetTagItem("gen_ai.usage.input_tokens"));
     }
@@ -60,12 +60,12 @@ public sealed class TelemetryTests : IDisposable
     [Fact]
     public async Task Marks_failed_agents_with_error_status_and_retry_events()
     {
-        var fake = new FakeChatClient(p => p.Contains("engenheiro sênior de segurança") ? throw new HttpRequestException("503") : """{"findings":[]}""");
+        var fake = new FakeChatClient(p => p.Contains("senior application security engineer") ? throw new HttpRequestException("503") : """{"findings":[]}""");
 
         using var test = TestSource.StartActivity("test")!;
         await new ReviewOrchestrator(fake, new CrewConfig { MaxRetries = 1 }, _ => TimeSpan.Zero).ReviewAsync(Diff);
 
-        var security = Assert.Single(Recorded(test), a => a.OperationName == "invoke_agent AgenteSeguranca");
+        var security = Assert.Single(Recorded(test), a => a.OperationName == "invoke_agent SecurityAgent");
         Assert.Equal(ActivityStatusCode.Error, security.Status);
         Assert.Contains(security.Events, e => e.Name == "retry");
     }

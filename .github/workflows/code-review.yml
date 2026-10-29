@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Secrets are not available on pull requests from forks: skip instead of failing.
-      - name: Verificar a chave da OpenAI
+      - name: Check the OpenAI key
         id: key
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -29,18 +29,18 @@ jobs:
           if [ -n "$OPENAI_API_KEY" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Secret OPENAI_API_KEY não configurado: revisão ignorada."
+            echo "::notice::The OPENAI_API_KEY secret is not set: review skipped."
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Revisar com o Code Review Crew
+      - name: Review with Code Review Crew
         if: steps.key.outputs.available == 'true'
         uses: ./
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           sarif-file: code-review-crew.sarif
 
-      - name: Enviar SARIF para o code scanning
+      - name: Upload SARIF to code scanning
         if: always() && steps.key.outputs.available == 'true' && hashFiles('code-review-crew.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:

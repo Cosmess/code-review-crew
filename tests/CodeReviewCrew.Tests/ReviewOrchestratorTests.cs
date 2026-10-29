@@ -21,7 +21,7 @@ public class ReviewOrchestratorTests
         """;
 
     private const string MagicNumber = """
-        {"findings":[{"severity":"Low","file":"src/UserRepository.cs","line":11,"title":"Número mágico","explanation":"Use uma constante.","suggestion":null}]}
+        {"findings":[{"severity":"Low","file":"src/UserRepository.cs","line":11,"title":"Magic number","explanation":"Use a constant.","suggestion":null}]}
         """;
 
     private const string Empty = """{"findings":[]}""";
@@ -29,12 +29,12 @@ public class ReviewOrchestratorTests
     private const string Synthesized = """
         {"summary":"Introduces a SQL injection.","verdict":"RequestChanges","findings":[
           {"severity":"Critical","file":"src/UserRepository.cs","line":11,"title":"SQL injection","explanation":"User input is concatenated into SQL.","suggestion":"Use parameters."},
-          {"severity":"Low","file":"src/UserRepository.cs","line":11,"title":"Número mágico","explanation":"Use uma constante.","suggestion":null}]}
+          {"severity":"Low","file":"src/UserRepository.cs","line":11,"title":"Magic number","explanation":"Use a constant.","suggestion":null}]}
         """;
 
-    private static bool IsSynthesizer(string prompt) => prompt.Contains("revisor líder");
-    private static bool IsSecurity(string prompt) => prompt.Contains("engenheiro sênior de segurança");
-    private static bool IsStyle(string prompt) => prompt.Contains("focado em manutenibilidade");
+    private static bool IsSynthesizer(string prompt) => prompt.Contains("lead reviewer");
+    private static bool IsSecurity(string prompt) => prompt.Contains("senior application security engineer");
+    private static bool IsStyle(string prompt) => prompt.Contains("focused on maintainability");
 
     private static FakeChatClient CreateFake() => new(prompt => prompt switch
     {
@@ -59,8 +59,8 @@ public class ReviewOrchestratorTests
 
         Assert.Equal(4, result.SpecialistReports.Count);
         Assert.Equal(5, fake.Prompts.Count);
-        Assert.Equal("AgenteSintetizador", started[^1]);
-        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca").Findings);
+        Assert.Equal("SynthesizerAgent", started[^1]);
+        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "SecurityAgent").Findings);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class ReviewOrchestratorTests
 
         var synthesizerPrompt = fake.Prompts.Single(IsSynthesizer);
         Assert.Contains("SQL injection", synthesizerPrompt);
-        Assert.Contains("AgenteSeguranca", synthesizerPrompt);
+        Assert.Contains("SecurityAgent", synthesizerPrompt);
         Assert.Contains("UserRepository.cs", synthesizerPrompt);
     }
 
@@ -117,9 +117,9 @@ public class ReviewOrchestratorTests
 
         var result = await orchestrator.ReviewAsync(Diff);
 
-        Assert.Equal(["AgenteSeguranca"], retries);
+        Assert.Equal(["SecurityAgent"], retries);
         Assert.All(result.SpecialistReports, r => Assert.Null(r.Error));
-        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca").Findings);
+        Assert.Single(result.SpecialistReports.Single(r => r.Agent == "SecurityAgent").Findings);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class ReviewOrchestratorTests
 
         var result = await Create(fake, new CrewConfig { MaxRetries = 1 }).ReviewAsync(Diff);
 
-        var security = result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca");
+        var security = result.SpecialistReports.Single(r => r.Agent == "SecurityAgent");
         Assert.Contains("falha permanente", security.Error);
         Assert.Equal(2, fake.Prompts.Count(IsSecurity));
         Assert.Equal(Verdict.RequestChanges, result.Report.Verdict);
@@ -143,16 +143,16 @@ public class ReviewOrchestratorTests
     public async Task Falls_back_to_merged_findings_when_the_synthesizer_fails()
     {
         var fake = new FakeChatClient(prompt =>
-            IsSynthesizer(prompt) ? "isto não é JSON"
+            IsSynthesizer(prompt) ? "this is not JSON"
             : IsSecurity(prompt) ? SqlInjection
             : IsStyle(prompt) ? MagicNumber
             : Empty);
 
         var result = await Create(fake, new CrewConfig { MaxRetries = 0 }).ReviewAsync(Diff);
 
-        Assert.StartsWith("O agente sintetizador falhou", result.Report.Summary);
+        Assert.StartsWith("The synthesizer agent failed", result.Report.Summary);
         Assert.Equal(Verdict.RequestChanges, result.Report.Verdict);
-        Assert.Equal(["SQL injection", "Número mágico"], result.Report.Findings.Select(f => f.Title));
+        Assert.Equal(["SQL injection", "Magic number"], result.Report.Findings.Select(f => f.Title));
     }
 
     [Fact]
@@ -187,10 +187,29 @@ public class ReviewOrchestratorTests
         await Create(fake, new CrewConfig { MaxChunkChars = 1000 }).ReviewAsync(diff);
 
         Assert.Equal(3, fake.Prompts.Count(IsSecurity));
-        Assert.Contains(fake.Prompts, p => p.Contains("(parte 2 de 3)"));
+        Assert.Contains(fake.Prompts, p => p.Contains("(part 2 of 3)"));
         var synthesizerPrompt = fake.Prompts.Single(IsSynthesizer);
         Assert.Contains("- F3.cs", synthesizerPrompt);
         Assert.DoesNotContain(bigLine, synthesizerPrompt);
+    }
+
+    [Fact]
+    public async Task Asks_every_agent_to_write_in_the_configured_language()
+    {
+        var fake = CreateFake();
+
+        await Create(fake, new CrewConfig { Language = "zh-CN" }).ReviewAsync(Diff);
+
+        Assert.All(fake.Prompts, p => Assert.Contains("in Simplified Chinese", p));
+    }
+
+    [Fact]
+    public async Task Writes_its_own_messages_in_the_configured_language()
+    {
+        var result = await Create(new FakeChatClient(_ => Empty), new CrewConfig { Language = "pt-BR" }).ReviewAsync(Diff);
+
+        Assert.Equal("pt-BR", result.Language);
+        Assert.Equal("Nenhum problema encontrado pelos agentes especialistas.", result.Report.Summary);
     }
 
     [Theory]

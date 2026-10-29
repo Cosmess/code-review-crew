@@ -1,0 +1,25 @@
+{
+  "description": "A report loads each customer's orders inside a loop.",
+  "shouldBlock": false,
+  "findings": [
+    {
+      "file": "src/Reports/CustomerReport.cs",
+      "line": 14,
+      "tolerance": 3,
+      "keywords": [
+        "n+1",
+        "n + 1",
+        "consulta",
+        "laco",
+        "loop",
+        "include",
+        "query",
+        "queries",
+        "循环",
+        "查询"
+      ],
+      "owasp": [],
+      "minSeverity": "Medium"
+    }
+  ]
+}

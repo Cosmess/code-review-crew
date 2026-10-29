@@ -1,0 +1,28 @@
+{
+  "description": "A controller blocks the thread with .Result on an asynchronous call.",
+  "shouldBlock": false,
+  "findings": [
+    {
+      "file": "src/Api/OrdersController.cs",
+      "line": 12,
+      "tolerance": 2,
+      "keywords": [
+        "result",
+        "bloque",
+        "sync",
+        "sincron",
+        "deadlock",
+        "await",
+        "thread",
+        "blocking",
+        "blocks",
+        "synchronous",
+        "阻塞",
+        "死锁",
+        "同步"
+      ],
+      "owasp": [],
+      "minSeverity": "Medium"
+    }
+  ]
+}

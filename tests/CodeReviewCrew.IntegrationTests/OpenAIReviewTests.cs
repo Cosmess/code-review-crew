@@ -19,7 +19,7 @@ public class OpenAIReviewTests
     [SkippableFact]
     public async Task Finds_the_critical_issues_in_the_vulnerable_sample()
     {
-        Skip.If(string.IsNullOrEmpty(ApiKey), "OPENAI_API_KEY não definida.");
+        Skip.If(string.IsNullOrEmpty(ApiKey), "OPENAI_API_KEY is not set.");
         var diff = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "samples", "vulnerable.diff"));
 
         var result = await new ReviewOrchestrator(CreateClient()).ReviewAsync(diff);
@@ -35,15 +35,15 @@ public class OpenAIReviewTests
     [SkippableFact]
     public async Task Approves_a_harmless_change()
     {
-        Skip.If(string.IsNullOrEmpty(ApiKey), "OPENAI_API_KEY não definida.");
+        Skip.If(string.IsNullOrEmpty(ApiKey), "OPENAI_API_KEY is not set.");
         const string diff = """
             diff --git a/README.md b/README.md
             --- a/README.md
             +++ b/README.md
             @@ -1,3 +1,3 @@
-             # Projeto
-            -Um projeto de exempo.
-            +Um projeto de exemplo.
+             # Project
+            -A sampel project.
+            +A sample project.
             """;
 
         var result = await new ReviewOrchestrator(CreateClient()).ReviewAsync(diff);

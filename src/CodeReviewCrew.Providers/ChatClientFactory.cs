@@ -45,7 +45,7 @@ public static class ChatClientFactory
             "anthropic" => new AnthropicClient { ApiKey = RequireEnv("ANTHROPIC_API_KEY") }
                 .AsIChatClient(model),
 
-            _ => throw new InvalidOperationException($"Provedor desconhecido '{provider}'. Use openai, ollama ou anthropic.")
+            _ => throw new InvalidOperationException($"Unknown provider '{provider}'. Use openai, ollama or anthropic.")
         };
 
         // One gen_ai "chat" span per model call, nested under the agent span. Prompts and code are not recorded.
@@ -57,5 +57,5 @@ public static class ChatClientFactory
     private static string RequireEnv(string name) =>
         Environment.GetEnvironmentVariable(name) is { Length: > 0 } value
             ? value
-            : throw new InvalidOperationException($"A variável de ambiente {name} não está definida.");
+            : throw new InvalidOperationException($"The environment variable {name} is not set.");
 }

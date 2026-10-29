@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 
 namespace CodeReviewCrew.Core.Rendering;
@@ -15,8 +16,9 @@ public static partial class SarifRenderer
     public const string ToolName = "Code Review Crew";
     private const string GenericRuleId = "CRC0001";
 
-    public static string Render(ReviewReport report)
+    public static string Render(ReviewReport report, string language = "en")
     {
+        var strings = ReviewLanguage.Parse(language).Strings;
         var rules = new Dictionary<string, (string Name, Severity MaxSeverity)>();
         var results = new JsonArray();
 
@@ -35,7 +37,7 @@ public static partial class SarifRenderer
 
             var message = string.IsNullOrWhiteSpace(finding.Suggestion)
                 ? $"{finding.Title}: {finding.Explanation}"
-                : $"{finding.Title}: {finding.Explanation} Sugestão: {finding.Suggestion}";
+                : $"{finding.Title}: {finding.Explanation} {strings.Suggestion}: {finding.Suggestion}";
 
             results.Add(new JsonObject
             {
@@ -71,7 +73,7 @@ public static partial class SarifRenderer
     private static (string Id, string Name) RuleFor(ReviewFinding finding) =>
         OwaspTag().Match(finding.Title) is { Success: true } match
             ? ($"OWASP-{match.Groups["id"].Value}", $"OWASP {match.Groups["id"].Value}: {match.Groups["name"].Value.Trim()}")
-            : (GenericRuleId, "Problema encontrado na revisão de código");
+            : (GenericRuleId, "Issue found in code review");
 
     private static JsonObject RuleNode(string id, string name, Severity severity)
     {

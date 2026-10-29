@@ -17,9 +17,9 @@ public class GitHubTests
          // fim
         """;
 
-    private static readonly ReviewFinding OnDiffLine = new(Severity.Critical, "src/A.cs", 2, "SQL injection", "Explicação.", "Use parâmetros.");
-    private static readonly ReviewFinding OutsideDiff = new(Severity.Medium, "src/A.cs", 40, "Fora do diff", "Explicação.", null);
-    private static readonly ReviewFinding OtherFile = new(Severity.Low, "src/B.cs", 1, "Outro arquivo", "Explicação.", null);
+    private static readonly ReviewFinding OnDiffLine = new(Severity.Critical, "src/A.cs", 2, "SQL injection", "Explanation.", "Use parameters.");
+    private static readonly ReviewFinding OutsideDiff = new(Severity.Medium, "src/A.cs", 40, "Outside the diff", "Explanation.", null);
+    private static readonly ReviewFinding OtherFile = new(Severity.Low, "src/B.cs", 1, "Other file", "Explanation.", null);
 
     private static CrewResult Result => new([], new ReviewReport("Resumo.", Verdict.RequestChanges, [OnDiffLine, OutsideDiff, OtherFile]), UsageSummary.Empty);
 
@@ -64,7 +64,7 @@ public class GitHubTests
         Assert.Equal(2, comment.GetProperty("line").GetInt32());
         Assert.Equal("RIGHT", comment.GetProperty("side").GetString());
         Assert.Contains("SQL injection", comment.GetProperty("body").GetString());
-        Assert.Contains("Fora do diff", body.GetProperty("body").GetString());
+        Assert.Contains("Outside the diff", body.GetProperty("body").GetString());
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class GitHubTests
         Assert.Equal(2, handler.Requests.Count);
         var retry = JsonDocument.Parse(handler.Requests[1].Body!).RootElement;
         Assert.Equal(0, retry.GetProperty("comments").GetArrayLength());
-        Assert.Contains("Use parâmetros.", retry.GetProperty("body").GetString());
+        Assert.Contains("Use parameters.", retry.GetProperty("body").GetString());
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class GitHubTests
     [InlineData("dono/")]
     public async Task Rejects_invalid_repository_names(string repository)
     {
-        var (client, _) = Create(_ => throw new InvalidOperationException("não deveria chamar a API"));
+        var (client, _) = Create(_ => throw new InvalidOperationException("should not call the API"));
 
         await Assert.ThrowsAsync<ArgumentException>(() => client.GetPullRequestDiffAsync(repository, 1));
     }

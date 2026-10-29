@@ -1,0 +1,45 @@
+{
+  "description": "Login builds SQL with interpolation and writes the password to the log.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Auth/LoginService.cs",
+      "line": 12,
+      "tolerance": 2,
+      "keywords": [
+        "sql",
+        "injection",
+        "injecao",
+        "interpol",
+        "parametr",
+        "concaten",
+        "interpolat",
+        "parameteriz",
+        "concatenat",
+        "注入"
+      ],
+      "owasp": [
+        "A05"
+      ],
+      "minSeverity": "High"
+    },
+    {
+      "file": "src/Auth/LoginService.cs",
+      "line": 10,
+      "tolerance": 2,
+      "keywords": [
+        "senha",
+        "log",
+        "sensiv",
+        "password",
+        "sensitive",
+        "密码",
+        "日志"
+      ],
+      "owasp": [
+        "A09"
+      ],
+      "minSeverity": "Medium"
+    }
+  ]
+}

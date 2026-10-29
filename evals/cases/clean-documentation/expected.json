@@ -1,0 +1,5 @@
+{
+  "description": "Renames a variable and adds XML documentation.",
+  "shouldBlock": false,
+  "findings": []
+}

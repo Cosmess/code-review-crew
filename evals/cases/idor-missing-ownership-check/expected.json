@@ -1,0 +1,32 @@
+{
+  "description": "An endpoint returns the invoice by id without checking it belongs to the user.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Api/InvoicesController.cs",
+      "line": 14,
+      "tolerance": 3,
+      "keywords": [
+        "idor",
+        "dono",
+        "propriet",
+        "autoriza",
+        "outro usuario",
+        "outros usuarios",
+        "pertence",
+        "acesso",
+        "owner",
+        "authoriz",
+        "belongs",
+        "access",
+        "越权",
+        "所有者",
+        "授权"
+      ],
+      "owasp": [
+        "A01"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

@@ -31,7 +31,7 @@ public sealed partial record ReviewFinding(
         Title = Whitespace().Replace(SeverityPrefix().Replace(Title.Trim(), ""), " ").Trim()
     };
 
-    [GeneratedRegex(@"^(?:(?:critical|high|medium|low|info|cr[ií]tic[oa]|alt[oa]|m[eé]di[oa]|baix[oa])\s*[:\-–]\s*)+", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:(?:critical|high|medium|low|info|cr[ií]tic[oa]|alt[oa]|m[eé]di[oa]|baix[oa]|严重|高|中|低|信息)\s*[:：\-–]\s*)+", RegexOptions.IgnoreCase)]
     private static partial Regex SeverityPrefix();
 
     [GeneratedRegex(@"\s{2,}")]

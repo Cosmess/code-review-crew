@@ -1,26 +1,33 @@
 using System.CommandLine;
+using CodeReviewCrew.Core.Configuration;
+using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 using CodeReviewCrew.Core.Orchestration;
 using CodeReviewCrew.Evals;
 using CodeReviewCrew.Providers;
 
 // Runs the crew over every labeled case and reports precision, recall and verdict accuracy.
-var casesOption = new Option<DirectoryInfo>("--casos")
+var casesOption = new Option<DirectoryInfo>("--cases")
 {
-    Description = "Pasta com os casos rotulados.",
-    DefaultValueFactory = _ => new DirectoryInfo(Path.Combine("evals", "casos"))
+    Description = "Folder with the labeled cases.",
+    DefaultValueFactory = _ => new DirectoryInfo(Path.Combine("evals", "cases"))
 };
-var filterOption = new Option<string?>("--filtro") { Description = "Roda só os casos cujo nome contém este texto." };
-var outputOption = new Option<FileInfo?>("--output") { Description = "Salva o relatório em Markdown neste arquivo." };
-var minRecallOption = new Option<double?>("--min-recall") { Description = "Termina com código 2 se o recall ficar abaixo deste valor (0 a 1)." };
+var filterOption = new Option<string?>("--filter") { Description = "Only runs the cases whose name contains this text." };
+var outputOption = new Option<FileInfo?>("--output") { Description = "Saves the Markdown report to this file." };
+var minRecallOption = new Option<double?>("--min-recall") { Description = "Exits with code 2 if the recall is below this value (0 to 1)." };
+var languageOption = new Option<string>("--language")
+{
+    Description = "Language of the reviews: en, pt-BR or zh-CN.",
+    DefaultValueFactory = _ => ReviewLanguage.English.Code
+};
 
-var root = new RootCommand("Avaliação do Code Review Crew em diffs rotulados.") { casesOption, filterOption, outputOption, minRecallOption };
+var root = new RootCommand("Evaluates the Code Review Crew on labeled diffs.") { casesOption, filterOption, outputOption, minRecallOption, languageOption };
 root.SetAction(async (parseResult, cancellationToken) =>
 {
     var directory = parseResult.GetValue(casesOption)!;
     if (!directory.Exists)
     {
-        Console.Error.WriteLine($"erro: pasta de casos não encontrada: {directory.FullName}");
+        Console.Error.WriteLine($"error: cases folder not found: {directory.FullName}");
         return 1;
     }
 
@@ -30,13 +37,15 @@ root.SetAction(async (parseResult, cancellationToken) =>
         .ToList();
 
     ReviewOrchestrator orchestrator;
+    ReviewLanguage language;
     try
     {
-        orchestrator = new ReviewOrchestrator(ChatClientFactory.Create());
+        language = ReviewLanguage.Parse(parseResult.GetValue(languageOption));
+        orchestrator = new ReviewOrchestrator(ChatClientFactory.Create(), new CrewConfig { Language = language.Code });
     }
     catch (InvalidOperationException ex)
     {
-        Console.Error.WriteLine($"erro: {ex.Message}");
+        Console.Error.WriteLine($"error: {ex.Message}");
         return 1;
     }
 
@@ -55,13 +64,12 @@ root.SetAction(async (parseResult, cancellationToken) =>
         inputTokens += result.Usage.InputTokens;
         outputTokens += result.Usage.OutputTokens;
         cost = result.Usage.EstimatedCostUsd is { } c ? (cost ?? 0) + c : cost;
-        Console.Error.WriteLine($"{score.TruePositives} acerto(s), {score.FalseNegatives} perdido(s), {score.FalsePositives} falso(s) positivo(s)");
+        Console.Error.WriteLine($"{score.TruePositives} found, {score.FalseNegatives} missed, {score.FalsePositives} false positive(s)");
     }
 
     var summary = new EvalSummary(scores);
     var (provider, modelName) = ChatClientFactory.Selection;
-    var model = $"{provider}/{modelName}";
-    var report = EvalReportRenderer.Render(summary, model, new UsageSummary(inputTokens, outputTokens, cost));
+    var report = EvalReportRenderer.Render(summary, $"{provider}/{modelName}", language.Code, new UsageSummary(inputTokens, outputTokens, cost));
     Console.WriteLine(report);
 
     if (parseResult.GetValue(outputOption) is { } output)

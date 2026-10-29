@@ -9,10 +9,10 @@ public class EvalTests
     private static readonly ExpectedFinding SqlInjection = new("src/Repo.cs", 15, 2, ["sql", "injecao"], ["A05"], Severity.High);
 
     private static EvalCase Case(bool shouldBlock, params ExpectedFinding[] expected) =>
-        new("caso", "", new ExpectedReview("descrição", shouldBlock, [.. expected]));
+        new("caso", "", new ExpectedReview("description", shouldBlock, [.. expected]));
 
     private static ReviewFinding Finding(int? line, string title, Severity severity = Severity.High, string file = "src/Repo.cs") =>
-        new(severity, file, line, title, "explicação", null);
+        new(severity, file, line, title, "explanation", null);
 
     [Theory]
     [InlineData(15, "Injeção de SQL", true)]
@@ -91,11 +91,11 @@ public class EvalTests
     [Fact]
     public void Every_labeled_case_in_the_dataset_is_consistent()
     {
-        var directory = Path.Combine(RepositoryRoot(), "evals", "casos");
+        var directory = Path.Combine(RepositoryRoot(), "evals", "cases");
 
         var cases = EvalCase.LoadAll(directory);
 
-        Assert.True(cases.Count >= 10, "o dataset deve ter pelo menos 10 casos");
+        Assert.True(cases.Count >= 10, "the dataset must have at least 10 cases");
         Assert.Contains(cases, c => c.Expected.Findings.Count == 0);
         foreach (var evalCase in cases)
         {
@@ -104,8 +104,8 @@ public class EvalTests
             Assert.False(string.IsNullOrWhiteSpace(evalCase.Expected.Description), evalCase.Name);
             foreach (var expected in evalCase.Expected.Findings)
             {
-                Assert.True(files.TryGetValue(expected.File, out var file), $"{evalCase.Name}: {expected.File} não está no diff");
-                Assert.True(file!.CommentableLines.Contains(expected.Line), $"{evalCase.Name}: linha {expected.Line} não está no diff");
+                Assert.True(files.TryGetValue(expected.File, out var file), $"{evalCase.Name}: {expected.File} is not in the diff");
+                Assert.True(file!.CommentableLines.Contains(expected.Line), $"{evalCase.Name}: line {expected.Line} is not in the diff");
                 Assert.NotEmpty(expected.Keywords);
             }
 
@@ -121,6 +121,6 @@ public class EvalTests
             directory = directory.Parent;
         }
 
-        return directory?.FullName ?? throw new InvalidOperationException("Raiz do repositório não encontrada.");
+        return directory?.FullName ?? throw new InvalidOperationException("Repository root not found.");
     }
 }

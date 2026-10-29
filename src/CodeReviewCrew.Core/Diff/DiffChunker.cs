@@ -5,7 +5,7 @@ namespace CodeReviewCrew.Core.Diff;
 /// <summary>Groups diff files into chunks small enough to fit in a single model request.</summary>
 public static class DiffChunker
 {
-    public const string TruncationMarker = "\n[... diff truncado: arquivo grande demais para uma única análise ...]\n";
+    public const string TruncationMarker = "\n[... diff truncated: file too large for a single analysis ...]\n";
 
     public static IReadOnlyList<string> Chunk(IEnumerable<DiffFile> files, int maxChars)
     {

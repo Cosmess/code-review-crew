@@ -1,43 +1,46 @@
-# Configuração do Code Review Crew. Copie para .crc.yml na raiz do seu repositório.
+# Code Review Crew configuration. Copy it to .crc.yml at the root of your repository.
 
-# Agentes especialistas que vão rodar (padrão: todos).
-# Valores: seguranca, owasp, performance, estilo
+# Language of the review: en (default), pt-BR or zh-CN.
+language: en
+
+# Specialist agents to run (default: all of them).
+# Values: security, owasp, performance, style
 agents:
-  - seguranca
+  - security
   - owasp
   - performance
-  - estilo
+  - style
 
-# Problemas abaixo desta severidade são descartados: Info, Low, Medium, High, Critical
+# Findings below this severity are dropped: Info, Low, Medium, High, Critical
 minSeverity: Low
 
-# Arquivos que nunca são revisados (padrões glob).
+# Files that are never reviewed (glob patterns).
 ignore:
   - "**/*.Designer.cs"
   - "**/Migrations/**"
   - "docs/**"
 
-# Tamanho máximo do diff, em caracteres, enviado a um agente por requisição.
-# Diffs maiores são divididos por arquivo.
+# Maximum diff size, in characters, sent to an agent per request.
+# Larger diffs are split by file.
 maxChunkChars: 60000
 
-# Tempo limite de cada chamada a um agente e quantas vezes tentar de novo em caso de falha.
+# Timeout of each agent call and how many times to retry on failure.
 agentTimeoutSeconds: 180
 maxRetries: 2
 
-# Servidores MCP extras cujas ferramentas os agentes especialistas podem usar.
-# Eles NÃO herdam as variáveis de ambiente (as chaves de API ficam protegidas): passe o necessário em env.
-# Para ler o próprio repositório não é preciso configurar nada: use --repo-path na CLI
-# (na GitHub Action isso já vem ligado).
+# Extra MCP servers whose tools the specialist agents can use.
+# They do NOT inherit the environment variables (API keys stay private): pass what they need in env.
+# Reading the repository itself needs no configuration: use --repo-path in the CLI
+# (it is on by default in the GitHub Action).
 # mcpServers:
-#   - name: documentacao
+#   - name: docs
 #     command: npx
-#     args: ["-y", "@exemplo/mcp-docs"]
+#     args: ["-y", "@example/mcp-docs"]
 #     env:
 #       DOCS_TOKEN: "..."
 
-# Preço do modelo em US$ por 1 milhão de tokens, para estimar o custo da revisão.
-# Confira os valores atuais na página de preços do seu provedor.
+# Model price in US$ per 1 million tokens, to estimate the cost of a review.
+# Check the current values on your provider's pricing page.
 # pricing:
 #   inputPerMillion: 0.25
 #   outputPerMillion: 2.00

@@ -1,0 +1,26 @@
+{
+  "description": "A file download uses the name from the URL without validation.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Api/FilesController.cs",
+      "line": 14,
+      "tolerance": 2,
+      "keywords": [
+        "traversal",
+        "caminho",
+        "diretorio",
+        "../",
+        "path",
+        "directory",
+        "路径",
+        "目录"
+      ],
+      "owasp": [
+        "A01",
+        "A05"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

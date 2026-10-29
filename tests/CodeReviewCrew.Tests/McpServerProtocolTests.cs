@@ -57,7 +57,7 @@ public sealed class McpServerProtocolTests : IAsyncLifetime
         var result = await _client.CallToolAsync("read_file", new Dictionary<string, object?> { ["path"] = path });
 
         Assert.True(result.IsError);
-        Assert.Contains("Acesso negado", Text(result));
+        Assert.Contains("Access denied", Text(result));
         Assert.DoesNotContain("sk-segredo", Text(result));
     }
 }

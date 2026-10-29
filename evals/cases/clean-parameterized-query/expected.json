@@ -1,0 +1,5 @@
+{
+  "description": "Product search with a parameterized query and input validation.",
+  "shouldBlock": false,
+  "findings": []
+}

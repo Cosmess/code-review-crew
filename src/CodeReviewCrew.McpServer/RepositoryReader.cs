@@ -30,7 +30,7 @@ public sealed class RepositoryReader
         Root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
         if (!Directory.Exists(Root))
         {
-            throw new DirectoryNotFoundException($"Diretório do repositório não encontrado: {root}");
+            throw new DirectoryNotFoundException($"Repository directory not found: {root}");
         }
     }
 
@@ -41,7 +41,7 @@ public sealed class RepositoryReader
         var fullPath = Resolve(path);
         if (!File.Exists(fullPath))
         {
-            throw new FileNotFoundException($"Arquivo não encontrado: {path}");
+            throw new FileNotFoundException($"File not found: {path}");
         }
 
         var lines = ReadTextLines(fullPath, path);
@@ -57,10 +57,10 @@ public sealed class RepositoryReader
 
         if (last < (endLine ?? lines.Length))
         {
-            text.AppendLine($"[... mais linhas: use startLine={last + 1} para continuar; o arquivo tem {lines.Length} linhas ...]");
+            text.AppendLine($"[... more lines: use startLine={last + 1} to continue; the file has {lines.Length} lines ...]");
         }
 
-        return text.Length > 0 ? text.ToString() : $"[{path} não tem linhas no intervalo pedido; o arquivo tem {lines.Length} linhas]";
+        return text.Length > 0 ? text.ToString() : $"[{path} has no lines in the requested range; the file has {lines.Length} lines]";
     }
 
     public string ListDirectory(string path = ".")
@@ -68,7 +68,7 @@ public sealed class RepositoryReader
         var fullPath = Resolve(path);
         if (!Directory.Exists(fullPath))
         {
-            throw new DirectoryNotFoundException($"Diretório não encontrado: {path}");
+            throw new DirectoryNotFoundException($"Directory not found: {path}");
         }
 
         var entries = new DirectoryInfo(fullPath).EnumerateFileSystemInfos()
@@ -85,7 +85,7 @@ public sealed class RepositoryReader
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            throw new ArgumentException("Informe o texto a buscar.");
+            throw new ArgumentException("Provide the text to search for.");
         }
 
         var matcher = filePattern is { Length: > 0 } ? new Matcher(StringComparison.OrdinalIgnoreCase).AddInclude(filePattern) : null;
@@ -120,12 +120,12 @@ public sealed class RepositoryReader
 
             if (results.Count >= MaxSearchResults)
             {
-                results.Add($"[... limite de {MaxSearchResults} resultados atingido ...]");
+                results.Add($"[... limit of {MaxSearchResults} results reached ...]");
                 break;
             }
         }
 
-        return results.Count > 0 ? string.Join('\n', results) : $"Nenhum resultado para \"{text}\".";
+        return results.Count > 0 ? string.Join('\n', results) : $"No results for \"{text}\".";
     }
 
     public string ReadConventions()
@@ -142,34 +142,34 @@ public sealed class RepositoryReader
             text.AppendLine($"===== {candidate} =====").AppendLine(File.ReadAllText(fullPath)).AppendLine();
             if (text.Length >= MaxConventionChars)
             {
-                return text.ToString(0, MaxConventionChars) + "\n[... convenções truncadas ...]";
+                return text.ToString(0, MaxConventionChars) + "\n[... conventions truncated ...]";
             }
         }
 
-        return text.Length > 0 ? text.ToString() : "Nenhum arquivo de convenções encontrado (AGENTS.md, CONTRIBUTING.md, .editorconfig...).";
+        return text.Length > 0 ? text.ToString() : "No convention files found (AGENTS.md, CONTRIBUTING.md, .editorconfig...).";
     }
 
     private string Resolve(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path))
         {
-            throw new UnauthorizedAccessException("Use um caminho relativo à raiz do repositório.");
+            throw new UnauthorizedAccessException("Use a path relative to the repository root.");
         }
 
         var fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(Root, path)));
         if (fullPath != Root && !fullPath.StartsWith(Root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         {
-            throw new UnauthorizedAccessException($"Acesso negado: {path} está fora do repositório.");
+            throw new UnauthorizedAccessException($"Access denied: {path} is outside the repository.");
         }
 
         if (fullPath != Root && IsHidden(Relative(fullPath)))
         {
-            throw new UnauthorizedAccessException($"Acesso negado: {path} é um arquivo protegido.");
+            throw new UnauthorizedAccessException($"Access denied: {path} is a protected file.");
         }
 
         if (IsLinkOnPath(fullPath))
         {
-            throw new UnauthorizedAccessException($"Acesso negado: {path} passa por um link simbólico.");
+            throw new UnauthorizedAccessException($"Access denied: {path} goes through a symbolic link.");
         }
 
         return fullPath;
@@ -224,13 +224,13 @@ public sealed class RepositoryReader
     {
         if (new FileInfo(fullPath).Length > MaxFileBytes)
         {
-            throw new InvalidOperationException($"{displayPath} é grande demais para ser lido (limite de 1 MB).");
+            throw new InvalidOperationException($"{displayPath} is too large to read (1 MB limit).");
         }
 
         var content = File.ReadAllText(fullPath);
         if (content.Contains('\0'))
         {
-            throw new InvalidOperationException($"{displayPath} é um arquivo binário.");
+            throw new InvalidOperationException($"{displayPath} is a binary file.");
         }
 
         return content.ReplaceLineEndings("\n").Split('\n');

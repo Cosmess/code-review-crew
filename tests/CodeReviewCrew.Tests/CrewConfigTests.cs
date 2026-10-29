@@ -20,7 +20,7 @@ public class CrewConfigTests
               outputPerMillion: 2
             """);
 
-        Assert.Equal(["AgenteOwasp", "AgentePerformance"], config.ResolveSpecialists().Select(a => a.Name));
+        Assert.Equal(["OwaspAgent", "PerformanceAgent"], config.ResolveSpecialists().Select(a => a.Name));
         Assert.Equal(Severity.Medium, config.MinSeverity);
         Assert.Equal(5000, config.MaxChunkChars);
         Assert.Equal(30, config.AgentTimeoutSeconds);
@@ -46,6 +46,7 @@ public class CrewConfigTests
         var config = CrewConfig.Load(path);
 
         Assert.Equal(Severity.Low, config.MinSeverity);
+        Assert.Equal("en", config.Language);
     }
 
     [Theory]
@@ -60,7 +61,7 @@ public class CrewConfigTests
     }
 
     [Theory]
-    [InlineData("agents: [inexistente]", "Agente desconhecido")]
+    [InlineData("agents: [inexistente]", "Unknown agent")]
     [InlineData("maxChunkChars: 10", "maxChunkChars")]
     [InlineData("maxRetries: -1", "maxRetries")]
     public void Rejects_invalid_settings(string yaml, string message)

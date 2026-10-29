@@ -27,7 +27,7 @@ internal sealed class McpToolHost : IAsyncDisposable
         {
             var repositoryServer = new McpServerConfig
             {
-                Name = "repositorio",
+                Name = "repository",
                 Command = "dotnet",
                 Args = [Path.Combine(AppContext.BaseDirectory, RepositoryServerDll), "--root", Path.GetFullPath(repositoryPath)]
             };
@@ -69,11 +69,11 @@ internal sealed class McpToolHost : IAsyncDisposable
 
             var tools = await client.ListToolsAsync(cancellationToken: cancellationToken);
             Tools.AddRange(tools);
-            Console.Error.WriteLine($"MCP: servidor '{server.Name}' conectado com {tools.Count} ferramenta(s): {string.Join(", ", tools.Select(t => t.Name))}");
+            Console.Error.WriteLine($"MCP: server '{server.Name}' connected with {tools.Count} tool(s): {string.Join(", ", tools.Select(t => t.Name))}");
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            Console.Error.WriteLine($"⚠ MCP: não foi possível iniciar o servidor '{server.Name}': {ex.Message}. A revisão segue sem ele.");
+            Console.Error.WriteLine($"⚠ MCP: could not start server '{server.Name}': {ex.Message}. The review continues without it.");
         }
     }
 

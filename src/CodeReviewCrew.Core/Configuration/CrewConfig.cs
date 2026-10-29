@@ -1,4 +1,5 @@
 using CodeReviewCrew.Core.Agents;
+using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 using Microsoft.Extensions.FileSystemGlobbing;
 using YamlDotNet.Serialization;
@@ -10,6 +11,9 @@ namespace CodeReviewCrew.Core.Configuration;
 public sealed class CrewConfig
 {
     public const string DefaultFileName = ".crc.yml";
+
+    /// <summary>Language of the review: en (default), pt-BR or zh-CN.</summary>
+    public string Language { get; set; } = ReviewLanguage.English.Code;
 
     /// <summary>Keys of the specialist agents to run. Empty means all of them.</summary>
     public List<string> Agents { get; set; } = [];
@@ -58,10 +62,12 @@ public sealed class CrewConfig
 
         return Agents.Select(key => Crew.Specialists.FirstOrDefault(a => a.Key.Equals(key, StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException(
-                    $"Agente desconhecido '{key}' no {DefaultFileName}. Valores válidos: {string.Join(", ", Crew.Specialists.Select(a => a.Key))}."))
+                    $"Unknown agent '{key}' in {DefaultFileName}. Valid values: {string.Join(", ", Crew.Specialists.Select(a => a.Key))}."))
             .Distinct()
             .ToList();
     }
+
+    public ReviewLanguage ResolveLanguage() => ReviewLanguage.Parse(Language);
 
     public bool IsIgnored(string path)
     {
@@ -79,19 +85,20 @@ public sealed class CrewConfig
     {
         if (MaxChunkChars < 1000)
         {
-            throw new InvalidOperationException("maxChunkChars deve ser no mínimo 1000.");
+            throw new InvalidOperationException("maxChunkChars must be at least 1000.");
         }
 
         if (AgentTimeoutSeconds <= 0 || MaxRetries < 0)
         {
-            throw new InvalidOperationException("agentTimeoutSeconds deve ser positivo e maxRetries não pode ser negativo.");
+            throw new InvalidOperationException("agentTimeoutSeconds must be positive and maxRetries cannot be negative.");
         }
 
         _ = ResolveSpecialists();
+        _ = ResolveLanguage();
 
         if (McpServers.Any(s => string.IsNullOrWhiteSpace(s.Name) || string.IsNullOrWhiteSpace(s.Command)))
         {
-            throw new InvalidOperationException("Cada item de mcpServers precisa de name e command.");
+            throw new InvalidOperationException("Every item in mcpServers needs a name and a command.");
         }
     }
 }

@@ -8,7 +8,7 @@ namespace CodeReviewCrew.Evals;
 public sealed record EvalCase(string Name, string Diff, ExpectedReview Expected)
 {
     public const string DiffFileName = "diff.patch";
-    public const string ExpectedFileName = "esperado.json";
+    public const string ExpectedFileName = "expected.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -24,25 +24,25 @@ public sealed record EvalCase(string Name, string Diff, ExpectedReview Expected)
     public static EvalCase Load(string caseDirectory)
     {
         var expected = JsonSerializer.Deserialize<ExpectedReview>(File.ReadAllText(Path.Combine(caseDirectory, ExpectedFileName)), JsonOptions)
-            ?? throw new InvalidOperationException($"{ExpectedFileName} vazio em {caseDirectory}");
+            ?? throw new InvalidOperationException($"Empty {ExpectedFileName} in {caseDirectory}");
         return new EvalCase(Path.GetFileName(caseDirectory), File.ReadAllText(Path.Combine(caseDirectory, DiffFileName)), expected);
     }
 }
 
 /// <param name="ShouldBlock">Whether the right verdict is RequestChanges.</param>
 public sealed record ExpectedReview(
-    [property: JsonPropertyName("descricao")] string Description,
-    [property: JsonPropertyName("deveBloquear")] bool ShouldBlock,
-    [property: JsonPropertyName("problemas")] List<ExpectedFinding> Findings);
+    string Description,
+    bool ShouldBlock,
+    List<ExpectedFinding> Findings);
 
 /// <summary>
 /// An issue the review must report. A finding matches it when it is in the same file, within
 /// <see cref="Tolerance"/> lines, and mentions one of the keywords or OWASP categories.
 /// </summary>
 public sealed record ExpectedFinding(
-    [property: JsonPropertyName("arquivo")] string File,
-    [property: JsonPropertyName("linha")] int Line,
-    [property: JsonPropertyName("tolerancia")] int Tolerance,
-    [property: JsonPropertyName("palavrasChave")] List<string> Keywords,
-    [property: JsonPropertyName("owasp")] List<string> Owasp,
-    [property: JsonPropertyName("severidadeMinima")] Severity MinimumSeverity);
+    string File,
+    int Line,
+    int Tolerance,
+    List<string> Keywords,
+    List<string> Owasp,
+    [property: JsonPropertyName("minSeverity")] Severity MinimumSeverity);

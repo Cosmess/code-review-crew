@@ -1,0 +1,29 @@
+{
+  "description": "Passwords stored with unsalted MD5.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Auth/PasswordHasher.cs",
+      "line": 10,
+      "tolerance": 2,
+      "keywords": [
+        "md5",
+        "hash",
+        "fraco",
+        "fraca",
+        "salt",
+        "senha",
+        "weak",
+        "password",
+        "弱",
+        "哈希",
+        "密码"
+      ],
+      "owasp": [
+        "A04",
+        "A07"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

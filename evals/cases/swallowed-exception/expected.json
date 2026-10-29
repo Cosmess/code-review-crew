@@ -1,0 +1,31 @@
+{
+  "description": "An e-mail sending failure is silently ignored.",
+  "shouldBlock": false,
+  "findings": [
+    {
+      "file": "src/Notifications/WelcomeEmail.cs",
+      "line": 11,
+      "tolerance": 2,
+      "keywords": [
+        "exce",
+        "engol",
+        "silenc",
+        "catch",
+        "ignora",
+        "log",
+        "exception",
+        "swallow",
+        "silent",
+        "empty catch",
+        "ignored",
+        "异常",
+        "吞"
+      ],
+      "owasp": [
+        "A09",
+        "A10"
+      ],
+      "minSeverity": "Low"
+    }
+  ]
+}

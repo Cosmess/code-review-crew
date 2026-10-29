@@ -4,6 +4,7 @@ using System.Text.Json;
 using CodeReviewCrew.Core.Agents;
 using CodeReviewCrew.Core.Configuration;
 using CodeReviewCrew.Core.Diff;
+using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 using CodeReviewCrew.Core.Telemetry;
 using Microsoft.Agents.AI;
@@ -25,6 +26,7 @@ public sealed class ReviewOrchestrator
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     private readonly CrewConfig _config;
+    private readonly ReviewLanguage _language;
     private readonly RetryPolicy _retry;
     private readonly IReadOnlyList<(AgentDefinition Definition, AIAgent Agent)> _specialists;
     private readonly AIAgent _synthesizer;
@@ -36,11 +38,12 @@ public sealed class ReviewOrchestrator
         ArgumentNullException.ThrowIfNull(chatClient);
 
         _config = config ?? CrewConfig.Default;
+        _language = _config.ResolveLanguage();
         _retry = new RetryPolicy(_config.MaxRetries, TimeSpan.FromSeconds(_config.AgentTimeoutSeconds), retryBackoff);
         _specialists = _config.ResolveSpecialists()
-            .Select(definition => (definition, CreateAgent(chatClient, definition, tools)))
+            .Select(definition => (definition, CreateAgent(chatClient, definition, _language, tools)))
             .ToList();
-        _synthesizer = CreateAgent(chatClient, Crew.Synthesizer);
+        _synthesizer = CreateAgent(chatClient, Crew.Synthesizer, _language);
     }
 
     public event Action<string>? AgentStarted;
@@ -51,14 +54,14 @@ public sealed class ReviewOrchestrator
     {
         if (string.IsNullOrWhiteSpace(diff))
         {
-            throw new ArgumentException("O diff está vazio.", nameof(diff));
+            throw new ArgumentException("The diff is empty.", nameof(diff));
         }
 
         var parsed = DiffParser.Parse(diff);
         var files = parsed.Where(f => !_config.IsIgnored(f.Path)).ToList();
         if (parsed.Count > 0 && files.Count == 0)
         {
-            return new CrewResult([], new ReviewReport("Nenhum arquivo para revisar depois de aplicar os filtros do .crc.yml.", Verdict.Approve, []), UsageSummary.Empty);
+            return new CrewResult([], new ReviewReport(_language.Strings.NothingToReview, Verdict.Approve, []), UsageSummary.Empty, _language.Code);
         }
 
         // A diff without file headers is still reviewed, as a single part.
@@ -79,7 +82,7 @@ public sealed class ReviewOrchestrator
         activity?.SetTag("crc.findings", report.Findings.Count);
         activity?.SetTag("gen_ai.usage.input_tokens", summary.InputTokens);
         activity?.SetTag("gen_ai.usage.output_tokens", summary.OutputTokens);
-        return new CrewResult(reports, report, summary);
+        return new CrewResult(reports, report, summary, _language.Code);
     }
 
     private async Task<SpecialistReport> RunSpecialistAsync(
@@ -94,12 +97,12 @@ public sealed class ReviewOrchestrator
 
         for (var i = 0; i < chunks.Count; i++)
         {
-            var part = chunks.Count > 1 ? $" (parte {i + 1} de {chunks.Count})" : "";
+            var part = chunks.Count > 1 ? $" (part {i + 1} of {chunks.Count})" : "";
             try
             {
                 var response = await _retry.ExecuteAsync(
                     token => agent.RunAsync<SpecialistFindings>(
-                        $"Revise o diff deste pull request{part}:\n\n```diff\n{chunks[i]}\n```",
+                        $"Review the diff of this pull request{part}:\n\n```diff\n{chunks[i]}\n```",
                         serializerOptions: JsonOptions,
                         cancellationToken: token),
                     (attempt, ex) => OnRetry(activity, definition.Name, attempt, ex),
@@ -126,13 +129,13 @@ public sealed class ReviewOrchestrator
     {
         if (reports.All(r => r.Error is not null))
         {
-            return new ReviewReport("Nenhum agente especialista conseguiu concluir a análise. Verifique a conexão com o provedor de LLM.", Verdict.Comment, []);
+            return new ReviewReport(_language.Strings.AllAgentsFailed, Verdict.Comment, []);
         }
 
         // Nothing to consolidate: skip the synthesizer call and save tokens.
         if (reports.All(r => r.Findings.Count == 0))
         {
-            return new ReviewReport("Nenhum problema encontrado pelos agentes especialistas.", Verdict.Approve, []);
+            return new ReviewReport(_language.Strings.NoFindings, Verdict.Approve, []);
         }
 
         AgentStarted?.Invoke(Crew.Synthesizer.Name);
@@ -163,7 +166,7 @@ public sealed class ReviewOrchestrator
                 .ToList();
 
             return new ReviewReport(
-                $"O agente sintetizador falhou ({ex.Message}). Os problemas abaixo reúnem as análises dos especialistas sem consolidação.",
+                string.Format(_language.Strings.SynthesizerFailed, ex.Message),
                 ReviewReport.VerdictFor(merged),
                 merged);
         }
@@ -201,11 +204,11 @@ public sealed class ReviewOrchestrator
         var prompt = new StringBuilder();
         if (chunks.Count == 1)
         {
-            prompt.AppendLine("Diff do pull request:").AppendLine("```diff").AppendLine(chunks[0]).AppendLine("```").AppendLine();
+            prompt.AppendLine("Pull request diff:").AppendLine("```diff").AppendLine(chunks[0]).AppendLine("```").AppendLine();
         }
         else
         {
-            prompt.AppendLine("O diff é grande demais para ser enviado inteiro. Arquivos alterados:");
+            prompt.AppendLine("The diff is too large to be sent whole. Changed files:");
             foreach (var file in files)
             {
                 prompt.AppendLine($"- {file.Path}");
@@ -214,7 +217,7 @@ public sealed class ReviewOrchestrator
             prompt.AppendLine();
         }
 
-        prompt.AppendLine("Análises dos especialistas:");
+        prompt.AppendLine("Specialist findings:");
         foreach (var report in reports.Where(r => r.Findings.Count > 0))
         {
             prompt.AppendLine($"## {report.Agent}").AppendLine(JsonSerializer.Serialize(report.Findings, JsonOptions));
@@ -223,8 +226,12 @@ public sealed class ReviewOrchestrator
         return prompt.ToString();
     }
 
-    private static AIAgent CreateAgent(IChatClient chatClient, AgentDefinition definition, IReadOnlyList<AITool>? tools = null) =>
-        tools is { Count: > 0 }
-            ? new ChatClientAgent(chatClient, definition.Instructions + Crew.ToolsInstructions, definition.Name, definition.Description, [.. tools])
-            : new ChatClientAgent(chatClient, instructions: definition.Instructions, name: definition.Name, description: definition.Description);
+    private static AIAgent CreateAgent(
+        IChatClient chatClient, AgentDefinition definition, ReviewLanguage language, IReadOnlyList<AITool>? tools = null)
+    {
+        var instructions = definition.Instructions + language.Instruction;
+        return tools is { Count: > 0 }
+            ? new ChatClientAgent(chatClient, instructions + Crew.ToolsInstructions, definition.Name, definition.Description, [.. tools])
+            : new ChatClientAgent(chatClient, instructions: instructions, name: definition.Name, description: definition.Description);
+    }
 }

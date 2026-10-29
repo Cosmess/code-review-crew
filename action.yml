@@ -1,5 +1,5 @@
 name: Code Review Crew
-description: Revisão de pull requests com uma equipe de agentes de IA (segurança, OWASP Top 10, performance e estilo).
+description: Multi-agent AI code review for pull requests (security, OWASP Top 10, performance and style) with inline comments and SARIF.
 author: Cosme Sousa
 branding:
   icon: shield
@@ -7,28 +7,31 @@ branding:
 
 inputs:
   openai-api-key:
-    description: Chave da API da OpenAI.
+    description: OpenAI API key.
     required: true
   github-token:
-    description: Token usado para ler o pull request e publicar a revisão.
+    description: Token used to read the pull request and post the review.
     default: ${{ github.token }}
   model:
-    description: Modelo da OpenAI.
+    description: OpenAI model.
     default: gpt-5-mini
+  language:
+    description: Language of the review (en, pt-BR or zh-CN). Overrides the language in .crc.yml.
+    default: ""
   config:
-    description: Caminho do arquivo de configuração do Code Review Crew.
+    description: Path of the Code Review Crew configuration file.
     default: .crc.yml
   post-review:
-    description: Publica a revisão no pull request, com comentários inline.
+    description: Posts the review on the pull request, with inline comments.
     default: "true"
   sarif-file:
-    description: Se informado, salva os problemas em SARIF neste caminho (para enviar ao code scanning).
+    description: If set, saves the findings as SARIF to this path (to upload to code scanning).
     default: ""
   fail-on:
-    description: Falha o job se houver problema desta severidade ou maior (Low, Medium, High, Critical).
+    description: Fails the job if there is a finding of this severity or higher (Low, Medium, High, Critical).
     default: ""
   read-repository:
-    description: Dá aos agentes ferramentas MCP para ler arquivos completos e as convenções do repositório (requer actions/checkout).
+    description: Gives the agents MCP tools to read whole files and the repository conventions (requires actions/checkout).
     default: "true"
 
 runs:
@@ -38,7 +41,7 @@ runs:
       with:
         dotnet-version: 10.0.x
 
-    - name: Revisar o pull request
+    - name: Review the pull request
       shell: bash
       # Inputs go through environment variables, never interpolated into the script, to avoid script injection.
       env:
@@ -47,6 +50,7 @@ runs:
         CRC_PROVIDER: openai
         CRC_MODEL: ${{ inputs.model }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        CRC_LANGUAGE: ${{ inputs.language }}
         CRC_CONFIG: ${{ inputs.config }}
         CRC_POST: ${{ inputs.post-review }}
         CRC_SARIF: ${{ inputs.sarif-file }}
@@ -54,13 +58,14 @@ runs:
         CRC_READ_REPOSITORY: ${{ inputs.read-repository }}
       run: |
         if [ -z "$PR_NUMBER" ]; then
-          echo "::error::O Code Review Crew precisa rodar em eventos pull_request."
+          echo "::error::Code Review Crew must run on pull_request events."
           exit 1
         fi
 
         args=(--pr "$PR_NUMBER" --repo "$GITHUB_REPOSITORY")
         if [ "$CRC_POST" = "true" ]; then args+=(--post); fi
         if [ -f "$CRC_CONFIG" ]; then args+=(--config "$CRC_CONFIG"); fi
+        if [ -n "$CRC_LANGUAGE" ]; then args+=(--language "$CRC_LANGUAGE"); fi
         if [ -n "$CRC_SARIF" ]; then args+=(--sarif "$CRC_SARIF"); fi
         if [ -n "$CRC_FAIL_ON" ]; then args+=(--fail-on "$CRC_FAIL_ON"); fi
         if [ "$CRC_READ_REPOSITORY" = "true" ]; then args+=(--repo-path "$GITHUB_WORKSPACE"); fi

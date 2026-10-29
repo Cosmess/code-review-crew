@@ -1,0 +1,22 @@
+{
+  "description": "A webhook deserializes JSON with TypeNameHandling.All.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Api/WebhookController.cs",
+      "line": 16,
+      "tolerance": 2,
+      "keywords": [
+        "desserializ",
+        "deserializ",
+        "typenamehandling",
+        "tipo",
+        "反序列化"
+      ],
+      "owasp": [
+        "A08"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

@@ -22,8 +22,8 @@ public class ToolCallingTests
         {
             lock (ToolsSeen) ToolsSeen.Add(options?.Tools);
             var list = messages.ToList();
-            var isSecurity = (options?.Instructions ?? "").Contains("engenheiro sênior de segurança")
-                || list.Any(m => m.Text.Contains("engenheiro sênior de segurança"));
+            var isSecurity = (options?.Instructions ?? "").Contains("senior application security engineer")
+                || list.Any(m => m.Text.Contains("senior application security engineer"));
 
             if (isSecurity && !list.SelectMany(m => m.Contents).OfType<FunctionResultContent>().Any())
             {
@@ -32,9 +32,9 @@ public class ToolCallingTests
             }
 
             var toolResult = list.SelectMany(m => m.Contents).OfType<FunctionResultContent>().FirstOrDefault()?.Result?.ToString();
-            var json = toolResult is not null && toolResult.Contains("sem validação")
-                ? """{"findings":[{"severity":"High","file":"src/Api.cs","line":1,"title":"Entrada sem validação","explanation":"Confirmado lendo o arquivo.","suggestion":null}]}"""
-                : (options?.Instructions ?? "").Contains("revisor líder") || list.Any(m => m.Text.Contains("revisor líder"))
+            var json = toolResult is not null && toolResult.Contains("without validation")
+                ? """{"findings":[{"severity":"High","file":"src/Api.cs","line":1,"title":"Input without validation","explanation":"Confirmed by reading the file.","suggestion":null}]}"""
+                : (options?.Instructions ?? "").Contains("lead reviewer") || list.Any(m => m.Text.Contains("lead reviewer"))
                     ? """{"summary":"s","verdict":"RequestChanges","findings":[]}"""
                     : """{"findings":[]}""";
             return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, json)));
@@ -52,20 +52,20 @@ public class ToolCallingTests
     public async Task Specialists_can_call_tools_and_use_the_result()
     {
         var readPaths = new List<string>();
-        var readFile = AIFunctionFactory.Create((string path) => { readPaths.Add(path); return "1| Find(name) sem validação"; }, "read_file");
+        var readFile = AIFunctionFactory.Create((string path) => { readPaths.Add(path); return "1| Find(name) without validation"; }, "read_file");
         var client = new ToolCallingChatClient();
 
         var result = await new ReviewOrchestrator(client, CrewConfig.Default, _ => TimeSpan.Zero, [readFile]).ReviewAsync(Diff);
 
         Assert.Equal(["src/Api.cs"], readPaths);
-        var security = result.SpecialistReports.Single(r => r.Agent == "AgenteSeguranca");
-        Assert.Equal("Entrada sem validação", Assert.Single(security.Findings).Title);
+        var security = result.SpecialistReports.Single(r => r.Agent == "SecurityAgent");
+        Assert.Equal("Input without validation", Assert.Single(security.Findings).Title);
     }
 
     [Fact]
     public async Task Only_specialists_receive_the_tools()
     {
-        var tool = AIFunctionFactory.Create((string path) => "sem validação", "read_file");
+        var tool = AIFunctionFactory.Create((string path) => "without validation", "read_file");
         var client = new ToolCallingChatClient();
 
         await new ReviewOrchestrator(client, CrewConfig.Default, _ => TimeSpan.Zero, [tool]).ReviewAsync(Diff);

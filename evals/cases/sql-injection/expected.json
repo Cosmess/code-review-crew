@@ -1,0 +1,28 @@
+{
+  "description": "Product search builds the SQL by concatenating user input.",
+  "shouldBlock": true,
+  "findings": [
+    {
+      "file": "src/Data/ProductRepository.cs",
+      "line": 15,
+      "tolerance": 2,
+      "keywords": [
+        "sql",
+        "injection",
+        "injecao",
+        "concaten",
+        "parametr",
+        "interpol",
+        "concatenat",
+        "parameteriz",
+        "interpolat",
+        "注入",
+        "参数化"
+      ],
+      "owasp": [
+        "A05"
+      ],
+      "minSeverity": "High"
+    }
+  ]
+}

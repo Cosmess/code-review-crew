@@ -29,4 +29,5 @@ public sealed record UsageSummary(long InputTokens, long OutputTokens, decimal? 
     public static UsageSummary Empty { get; } = new(0, 0, null);
 }
 
-public sealed record CrewResult(IReadOnlyList<SpecialistReport> SpecialistReports, ReviewReport Report, UsageSummary Usage);
+/// <param name="Language">Code of the language the review is written in (see <c>ReviewLanguage</c>).</param>
+public sealed record CrewResult(IReadOnlyList<SpecialistReport> SpecialistReports, ReviewReport Report, UsageSummary Usage, string Language = "en");

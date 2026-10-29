@@ -8,24 +8,24 @@ namespace CodeReviewCrew.McpServer;
 [McpServerToolType]
 public sealed class RepositoryTools(RepositoryReader reader)
 {
-    [McpServerTool(Name = "read_file", ReadOnly = true), Description("Lê um arquivo do repositório, com números de linha. Use para ver o contexto completo de um arquivo alterado no diff.")]
+    [McpServerTool(Name = "read_file", ReadOnly = true), Description("Reads a repository file with line numbers. Use it to see the full context of a file changed in the diff.")]
     public string ReadFile(
-        [Description("Caminho relativo à raiz do repositório, ex.: src/Api/Program.cs")] string path,
-        [Description("Primeira linha a ler (padrão: 1).")] int startLine = 1,
-        [Description("Última linha a ler (padrão: fim do arquivo). No máximo 400 linhas por chamada.")] int? endLine = null) =>
+        [Description("Path relative to the repository root, e.g. src/Api/Program.cs")] string path,
+        [Description("First line to read (default: 1).")] int startLine = 1,
+        [Description("Last line to read (default: end of file). At most 400 lines per call.")] int? endLine = null) =>
         Run(() => reader.ReadFile(path, startLine, endLine));
 
-    [McpServerTool(Name = "search_code", ReadOnly = true), Description("Busca um texto em todos os arquivos do repositório (sem diferenciar maiúsculas). Use para achar definições, chamadas ou validações de um método.")]
+    [McpServerTool(Name = "search_code", ReadOnly = true), Description("Searches all repository files for a text (case-insensitive). Use it to find definitions, calls or validations of a method.")]
     public string SearchCode(
-        [Description("Texto a buscar, ex.: nome de um método ou classe.")] string text,
-        [Description("Padrão glob opcional para filtrar arquivos, ex.: **/*.cs")] string? filePattern = null) =>
+        [Description("Text to search for, e.g. a method or class name.")] string text,
+        [Description("Optional glob pattern to filter files, e.g. **/*.cs")] string? filePattern = null) =>
         Run(() => reader.Search(text, filePattern));
 
-    [McpServerTool(Name = "list_directory", ReadOnly = true), Description("Lista arquivos e pastas de um diretório do repositório.")]
-    public string ListDirectory([Description("Caminho relativo à raiz (padrão: raiz).")] string path = ".") =>
+    [McpServerTool(Name = "list_directory", ReadOnly = true), Description("Lists the files and folders of a repository directory.")]
+    public string ListDirectory([Description("Path relative to the root (default: the root).")] string path = ".") =>
         Run(() => reader.ListDirectory(path));
 
-    [McpServerTool(Name = "read_conventions", ReadOnly = true), Description("Lê as convenções do projeto (AGENTS.md, CONTRIBUTING.md, .editorconfig e similares). Use para saber os padrões que o código deve seguir.")]
+    [McpServerTool(Name = "read_conventions", ReadOnly = true), Description("Reads the project conventions (AGENTS.md, CONTRIBUTING.md, .editorconfig and similar). Use it to learn the standards the code must follow.")]
     public string ReadConventions() => Run(reader.ReadConventions);
 
     // Only these messages are safe and useful to return to the model; anything else is a bug.

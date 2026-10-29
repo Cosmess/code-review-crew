@@ -24,8 +24,8 @@ public class SarifRendererTests
     public void Maps_owasp_findings_to_one_rule_per_category()
     {
         var sarif = Render(
-            new ReviewFinding(Severity.Critical, "src/A.cs", 10, "[A05:2025 Injection] SQL montado com interpolação", "Entrada concatenada.", "Use parâmetros."),
-            new ReviewFinding(Severity.Medium, "src/B.cs", 3, "[A05:2025 Injection] Comando montado com string", "Entrada concatenada.", null));
+            new ReviewFinding(Severity.Critical, "src/A.cs", 10, "[A05:2025 Injection] SQL built with interpolation", "Input concatenated.", "Use parameters."),
+            new ReviewFinding(Severity.Medium, "src/B.cs", 3, "[A05:2025 Injection] Command built with a string", "Input concatenated.", null));
 
         var run = sarif.GetProperty("runs")[0];
         var rule = Assert.Single(run.GetProperty("tool").GetProperty("driver").GetProperty("rules").EnumerateArray());
@@ -35,7 +35,7 @@ public class SarifRendererTests
 
         var result = run.GetProperty("results")[0];
         Assert.Equal("error", result.GetProperty("level").GetString());
-        Assert.EndsWith("Sugestão: Use parâmetros.", result.GetProperty("message").GetProperty("text").GetString());
+        Assert.EndsWith("Suggestion: Use parameters.", result.GetProperty("message").GetProperty("text").GetString());
         var location = result.GetProperty("locations")[0].GetProperty("physicalLocation");
         Assert.Equal("src/A.cs", location.GetProperty("artifactLocation").GetProperty("uri").GetString());
         Assert.Equal(10, location.GetProperty("region").GetProperty("startLine").GetInt32());
@@ -45,7 +45,7 @@ public class SarifRendererTests
     [Fact]
     public void Uses_a_generic_rule_and_omits_the_region_without_a_line()
     {
-        var sarif = Render(new ReviewFinding(Severity.Low, "src/C.cs", null, "Nome ruim", "Explicação.", null));
+        var sarif = Render(new ReviewFinding(Severity.Low, "src/C.cs", null, "Bad name", "Explanation.", null));
 
         var run = sarif.GetProperty("runs")[0];
         Assert.Equal("CRC0001", run.GetProperty("results")[0].GetProperty("ruleId").GetString());

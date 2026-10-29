@@ -84,7 +84,7 @@ public sealed class GitHubClient
         {
             var error = await response.Content.ReadAsStringAsync(cancellationToken);
             response.Dispose();
-            throw new GitHubApiException(response.StatusCode, $"GitHub respondeu {(int)response.StatusCode} em {request.Method} {request.RequestUri}: {error}");
+            throw new GitHubApiException(response.StatusCode, $"GitHub returned {(int)response.StatusCode} for {request.Method} {request.RequestUri}: {error}");
         }
 
         return response;
@@ -94,7 +94,7 @@ public sealed class GitHubClient
     {
         if (repository.Split('/') is not [{ Length: > 0 }, { Length: > 0 }])
         {
-            throw new ArgumentException($"Repositório inválido '{repository}'. Use o formato dono/nome.", nameof(repository));
+            throw new ArgumentException($"Invalid repository '{repository}'. Use the owner/name format.", nameof(repository));
         }
 
         return $"repos/{repository}/pulls/{number}";

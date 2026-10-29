@@ -1,5 +1,6 @@
 using System.Net;
 using CodeReviewCrew.Core.Diff;
+using CodeReviewCrew.Core.Localization;
 using CodeReviewCrew.Core.Models;
 using CodeReviewCrew.Core.Rendering;
 
@@ -19,7 +20,7 @@ public sealed class ReviewPublisher(GitHubClient gitHub, int maxInlineComments =
     {
         var inline = SelectInlineFindings(diff, result.Report.Findings);
         var comments = inline
-            .Select(f => new ReviewComment(f.File, f.Line!.Value, MarkdownRenderer.RenderInlineComment(f)))
+            .Select(f => new ReviewComment(f.File, f.Line!.Value, MarkdownRenderer.RenderInlineComment(f, result.Language)))
             .ToList();
 
         try
@@ -47,6 +48,8 @@ public sealed class ReviewPublisher(GitHubClient gitHub, int maxInlineComments =
     private static string Body(CrewResult result, IReadOnlySet<ReviewFinding> inline)
     {
         var body = MarkdownRenderer.Render(result, inline);
-        return body.Length <= MaxBodyLength ? body : body[..MaxBodyLength] + "\n\n_[revisão truncada pelo limite de tamanho do GitHub]_";
+        return body.Length <= MaxBodyLength
+            ? body
+            : body[..MaxBodyLength] + $"\n\n_{ReviewLanguage.Parse(result.Language).Strings.ReviewTruncated}_";
     }
 }

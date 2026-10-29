@@ -16,7 +16,7 @@ public sealed class RepositoryReaderTests : IDisposable
         Write("config/prod.pem", "-----BEGIN PRIVATE KEY-----");
         Write(".git/config", "[remote \"origin\"]");
         Write("bin/Debug/app.cs", "public void Validate() { }");
-        File.WriteAllText(Path.Combine(_outside, "segredo.txt"), "fora do repositório");
+        File.WriteAllText(Path.Combine(_outside, "segredo.txt"), "outside the repository");
         _reader = new RepositoryReader(_root);
     }
 
@@ -57,7 +57,7 @@ public sealed class RepositoryReaderTests : IDisposable
     public void Rejects_secret_files_and_the_git_directory(string path)
     {
         var ex = Assert.Throws<UnauthorizedAccessException>(() => _reader.ReadFile(path));
-        Assert.Contains("protegido", ex.Message);
+        Assert.Contains("protected", ex.Message);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class RepositoryReaderTests : IDisposable
 
         Assert.Throws<UnauthorizedAccessException>(() => _reader.ReadFile("src/atalho.txt"));
         Assert.Throws<UnauthorizedAccessException>(() => _reader.ReadFile("externo/segredo.txt"));
-        Assert.StartsWith("Nenhum resultado", _reader.Search("fora do repositório"));
+        Assert.StartsWith("No results", _reader.Search("outside the repository"));
     }
 
     [Fact]
