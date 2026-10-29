@@ -17,6 +17,8 @@ dotnet test tests/CodeReviewCrew.Tests         # testes unitários (rápidos, se
 dotnet test                                    # tudo; os de integração são ignorados sem OPENAI_API_KEY
 dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff   # revisão real (precisa de OPENAI_API_KEY)
 dotnet run --project src/CodeReviewCrew.Cli -- --help
+dotnet run --project src/CodeReviewCrew.AppHost                          # Aspire: traces de cada agente no dashboard
+dotnet run --project src/CodeReviewCrew.Evals                            # avaliação com métricas (precisa de OPENAI_API_KEY)
 ```
 
 ## Regras obrigatórias
@@ -30,11 +32,17 @@ dotnet run --project src/CodeReviewCrew.Cli -- --help
 4. **Testes acompanham toda mudança de comportamento.** Testes unitários nunca chamam LLM nem rede:
    use `FakeChatClient` e `FakeHttpHandler`. Rode `dotnet test` antes de cada commit; todos devem passar.
 5. **O Core não depende de provedor de LLM.** `CodeReviewCrew.Core` só conhece `IChatClient`
-   (`Microsoft.Extensions.AI`). SDKs de OpenAI, Anthropic e Ollama ficam na CLI.
+   (`Microsoft.Extensions.AI`). SDKs de OpenAI, Anthropic e Ollama ficam em `CodeReviewCrew.Providers`.
 6. **Uma falha de agente nunca derruba a revisão.** Toda chamada a modelo passa pelo `RetryPolicy`; erros
    viram `SpecialistReport.Error` ou o fallback do sintetizador. Não propague exceções de LLM para o usuário.
 7. **Segredos só por variável de ambiente.** Nunca escreva chaves em código, testes, exemplos ou logs.
 8. **Mudou comportamento visível? Atualize o README** e, se for decisão de arquitetura, crie um ADR em `docs/adr/`.
+9. **Ferramentas dadas a agentes são somente leitura e confinadas.** O conteúdo de um PR é não confiável e pode
+   tentar manipular o modelo. Toda ferramenta nova segue o modelo do `RepositoryReader` (sem sair da raiz, sem
+   links simbólicos, sem `.git` nem arquivos de segredos), tem testes de ataque e servidores MCP nunca herdam
+   variáveis de ambiente.
+10. **Mudou prompts ou agentes? Rode a avaliação** (`src/CodeReviewCrew.Evals`) e compare precisão e recall
+    antes e depois. Novos tipos de problema ganham um caso em `evals/casos/`.
 
 ## Mapa do código
 
@@ -46,8 +54,14 @@ dotnet run --project src/CodeReviewCrew.Cli -- --help
 | `src/CodeReviewCrew.Core/Configuration/` | `.crc.yml` (`CrewConfig`) |
 | `src/CodeReviewCrew.Core/GitHub/` | Cliente REST do GitHub e publicação da revisão com comentários inline |
 | `src/CodeReviewCrew.Core/Rendering/` | Saídas em Markdown e SARIF |
-| `src/CodeReviewCrew.Cli/` | Linha de comando (System.CommandLine) e escolha do provedor de LLM |
-| `tests/CodeReviewCrew.Tests/` | Testes unitários |
+| `src/CodeReviewCrew.Core/Telemetry/` | `ActivitySource` e métricas OpenTelemetry (`CrewTelemetry`) |
+| `src/CodeReviewCrew.Providers/` | `ChatClientFactory`: cliente de LLM por provedor, com OpenTelemetry |
+| `src/CodeReviewCrew.Cli/` | Linha de comando (System.CommandLine), servidores MCP (`McpToolHost`) e exportação OTLP |
+| `src/CodeReviewCrew.McpServer/` | Servidor MCP stdio com as ferramentas somente leitura do repositório |
+| `src/CodeReviewCrew.AppHost/` | AppHost do .NET Aspire |
+| `src/CodeReviewCrew.Evals/` | Runner da avaliação e cálculo de precisão/recall |
+| `evals/casos/` | Pull requests rotulados (`diff.patch` + `esperado.json`) |
+| `tests/CodeReviewCrew.Tests/` | Testes unitários (inclui o protocolo MCP real e a consistência do dataset) |
 | `tests/CodeReviewCrew.IntegrationTests/` | Testes com a API real da OpenAI |
 | `action.yml` | GitHub Action composta |
 
@@ -58,6 +72,8 @@ dotnet run --project src/CodeReviewCrew.Cli -- --help
 - [Testes](docs/testes.md)
 - [Como adicionar um novo agente](docs/guias/adicionar-agente.md)
 - [Usando a GitHub Action](docs/guias/github-action.md)
+- [Observabilidade com Aspire](docs/guias/observabilidade.md)
+- [Avaliação e como adicionar casos](evals/README.md)
 - [Decisões de arquitetura (ADRs)](docs/adr/)
 
 ## Antes de encerrar uma tarefa

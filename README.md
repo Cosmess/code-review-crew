@@ -41,6 +41,12 @@ flowchart LR
 - **Resiliente**: timeout e retry com backoff em cada chamada; se um agente falhar, a revisão segue e avisa.
 - **Controle de custo**: tokens e custo estimado por revisão, diffs grandes divididos em partes, e o
   sintetizador não é chamado quando não há nada para consolidar.
+- **Agentes com acesso ao repositório via MCP**: um servidor MCP próprio deixa os agentes lerem arquivos completos,
+  buscarem código e lerem as convenções do projeto, com acesso somente leitura e protegido contra path traversal
+  e leitura de segredos. Servidores MCP externos podem ser plugados pelo `.crc.yml`.
+- **Observabilidade com OpenTelemetry e .NET Aspire**: um trace por revisão, um span por agente e por chamada ao
+  modelo, além de métricas de tokens e problemas, visíveis no dashboard do Aspire.
+- **Avaliação com métricas**: 12 PRs rotulados medem precisão, recall e F1 das revisões.
 - **Configurável por repositório** via `.crc.yml`: agentes, severidade mínima, caminhos ignorados, limites.
 - **Saída estruturada**: cada agente retorna JSON tipado (`ReviewFinding`, `ReviewReport`) em vez de texto livre.
 - **OpenAI por padrão, independente de provedor**: construído sobre `IChatClient`, também roda com Ollama ou Anthropic Claude.
@@ -93,6 +99,9 @@ dotnet run --project src/CodeReviewCrew.Cli -- --pr 42 --repo dono/repositorio -
 
 # Exportar SARIF e falhar se houver problema High ou Critical
 dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff --sarif revisao.sarif --fail-on High
+
+# Deixar os agentes lerem o repositório (ferramentas MCP)
+git diff main | dotnet run --project src/CodeReviewCrew.Cli -- --repo-path .
 ```
 
 | Opção | Descrição |
@@ -105,6 +114,7 @@ dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff --sarif r
 | `--output <arquivo>` | Salva a revisão em Markdown |
 | `--sarif <arquivo>` | Salva os problemas em SARIF 2.1.0 |
 | `--fail-on <severidade>` | Código de saída 2 se houver problema dessa severidade ou maior |
+| `--repo-path <diretório>` | Dá aos agentes ferramentas MCP para ler arquivos, buscar código e ler convenções |
 
 ### Variáveis de ambiente
 
@@ -116,6 +126,7 @@ dotnet run --project src/CodeReviewCrew.Cli -- samples/vulnerable.diff --sarif r
 | `GITHUB_TOKEN` | | Necessário para `--post` e para PRs de repositórios privados |
 | `OLLAMA_ENDPOINT` | `http://localhost:11434` | URL do servidor Ollama |
 | `ANTHROPIC_API_KEY` | | Chave da Anthropic, quando `CRC_PROVIDER=anthropic` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | | Exporta traces e métricas via OTLP (o Aspire define sozinho) |
 
 ## Configuração por repositório (`.crc.yml`)
 
@@ -131,14 +142,41 @@ pricing:            # US$ por 1 milhão de tokens, para estimar o custo
   outputPerMillion: 2.00
 ```
 
-Todas as opções estão comentadas em [`.crc.example.yml`](.crc.example.yml).
+Todas as opções estão comentadas em [`.crc.example.yml`](.crc.example.yml), incluindo `mcpServers`
+para plugar servidores MCP externos.
+
+## Observabilidade com .NET Aspire
+
+```bash
+dotnet run --project src/CodeReviewCrew.AppHost
+```
+
+O dashboard abre no navegador e pede a chave da OpenAI na primeira execução. Ele mostra a revisão de
+`samples/vulnerable.diff` como um trace: um span `code_review`, um `invoke_agent` por agente rodando em
+paralelo e um span por chamada ao modelo, com tokens, retries e erros. Detalhes no
+[guia de observabilidade](docs/guias/observabilidade.md).
+
+## Avaliação
+
+```bash
+dotnet run --project src/CodeReviewCrew.Evals
+```
+
+Roda a equipe sobre 12 pull requests rotulados (10 com problemas conhecidos e 2 limpos) e gera um relatório
+com precisão, recall, F1 e acerto de veredito. No GitHub, rode o workflow **Avaliação** pela aba Actions.
+Formato dos casos e como adicionar novos: [`evals/README.md`](evals/README.md).
 
 ## Estrutura do projeto
 
 ```
 src/
-  CodeReviewCrew.Core/       agentes, orquestração, diff, GitHub, configuração e saídas (Markdown, SARIF)
-  CodeReviewCrew.Cli/        linha de comando e escolha do provedor de LLM
+  CodeReviewCrew.Core/       agentes, orquestração, diff, GitHub, configuração, telemetria e saídas
+  CodeReviewCrew.Providers/  criação do cliente de LLM (OpenAI, Anthropic, Ollama)
+  CodeReviewCrew.Cli/        linha de comando, servidores MCP e exportação OTLP
+  CodeReviewCrew.McpServer/  servidor MCP somente leitura com as ferramentas do repositório
+  CodeReviewCrew.AppHost/    AppHost do .NET Aspire
+  CodeReviewCrew.Evals/      runner da avaliação
+evals/casos/                 pull requests rotulados
 tests/
   CodeReviewCrew.Tests/              testes unitários, sem rede
   CodeReviewCrew.IntegrationTests/   testes com a API real da OpenAI
@@ -166,10 +204,11 @@ OPENAI_API_KEY=sk-... dotnet test              # inclui os testes com o modelo r
 - [x] Configuração por repositório (`.crc.yml`)
 - [x] Saída em SARIF para o GitHub code scanning
 - [x] Testes de integração com o modelo real
+- [x] AppHost do .NET Aspire com traces OpenTelemetry de cada agente
+- [x] Ferramentas MCP para os agentes lerem arquivos completos e convenções do repositório
+- [x] Suíte de avaliação medindo precisão/recall em diffs rotulados
 - [ ] Demo visual (GIF da revisão em um PR)
-- [ ] AppHost do .NET Aspire com traces OpenTelemetry de cada agente
-- [ ] Ferramentas MCP para os agentes lerem arquivos completos e convenções do repositório
-- [ ] Suíte de avaliação medindo precisão/recall em diffs rotulados
+- [ ] Publicar os resultados da avaliação no README
 
 ## Licença
 

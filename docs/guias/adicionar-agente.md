@@ -38,7 +38,16 @@ pela chave.
 - Lista de valores de `agents` no `.crc.example.yml`.
 - Diagrama em `docs/arquitetura.md`.
 
-## 5. Valide e faça o commit
+## 5. Meça o impacto
+
+Crie um caso em `evals/casos/` com o tipo de problema que o agente deve achar (veja [`evals/README.md`](../../evals/README.md))
+e rode a avaliação antes e depois da mudança. O novo agente não deve derrubar a precisão dos outros casos.
+
+```bash
+dotnet run --project src/CodeReviewCrew.Evals
+```
+
+## 6. Valide e faça o commit
 
 ```bash
 dotnet test

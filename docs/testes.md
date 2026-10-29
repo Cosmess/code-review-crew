@@ -6,6 +6,15 @@
 |---|---|---|
 | `tests/CodeReviewCrew.Tests` | Toda a lógica do Core: parser, config, orquestração, retry, renderers, GitHub | Nunca |
 | `tests/CodeReviewCrew.IntegrationTests` | Revisão de ponta a ponta com a API real da OpenAI | Sim, só com `OPENAI_API_KEY` |
+| `src/CodeReviewCrew.Evals` (não é teste) | Qualidade das revisões: precisão, recall e F1 no dataset `evals/casos` | Sim, sob demanda |
+
+Os testes unitários também cobrem:
+
+- **Protocolo MCP real** (`McpServerProtocolTests`): sobe o processo do servidor e chama as ferramentas por stdio,
+  inclusive tentativas de ler `.env` e sair da raiz.
+- **Segurança do `RepositoryReader`**: path traversal, caminhos absolutos, links simbólicos, `.git` e segredos.
+- **Telemetria** (`TelemetryTests`): spans e eventos, isolados por um span de teste porque outras classes rodam em paralelo.
+- **Consistência do dataset**: todo `esperado.json` aponta para arquivo e linha que existem no diff.
 
 No CI, os unitários rodam em todo push e PR. Os de integração rodam só em push na `main`, porque custam dinheiro.
 

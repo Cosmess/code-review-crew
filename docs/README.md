@@ -7,6 +7,8 @@
 | [Testes](testes.md) | Estratégia de testes, fakes e como escrever novos testes |
 | [Adicionar um agente](guias/adicionar-agente.md) | Passo a passo para criar um novo agente especialista |
 | [GitHub Action](guias/github-action.md) | Como usar o Code Review Crew em outros repositórios |
+| [Observabilidade](guias/observabilidade.md) | Traces e métricas com OpenTelemetry e .NET Aspire |
+| [Avaliação](../evals/README.md) | Dataset rotulado, métricas e como adicionar casos |
 | [ADRs](adr/) | Registro das decisões de arquitetura |
 
 As regras gerais para agentes de IA estão no [AGENTS.md](../AGENTS.md) na raiz do repositório.

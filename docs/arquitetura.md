@@ -10,6 +10,7 @@ flowchart TD
     CFG[.crc.yml<br/>CrewConfig] --> ORQ
     ORQ --> P[DiffParser<br/>+ filtro ignore]
     P --> C[DiffChunker<br/>partes ≤ maxChunkChars]
+    MCP[Servidores MCP<br/>repositório + .crc.yml] -.ferramentas.-> S1 & S2 & S3 & S4
     C --> S1[AgenteSeguranca]
     C --> S2[AgenteOwasp]
     C --> S3[AgentePerformance]
@@ -35,6 +36,34 @@ flowchart TD
 7. **Saídas.** Markdown no stdout (e no `GITHUB_STEP_SUMMARY`), SARIF opcional e, com `--post`, uma review
    no PR. Problemas em linhas do diff viram comentários inline; o resto vai para o corpo da review.
 
+## Ferramentas MCP
+
+Com `--repo-path` (padrão na GitHub Action), o `McpToolHost` da CLI inicia o `CodeReviewCrew.McpServer`
+por stdio e entrega suas ferramentas aos especialistas: `read_file`, `search_code`, `list_directory` e
+`read_conventions`. O `ChatClientAgent` executa as chamadas de ferramenta automaticamente. Servidores
+extras do `.crc.yml` (`mcpServers`) entram da mesma forma. O sintetizador não recebe ferramentas.
+
+O PR é conteúdo não confiável, então:
+
+- o `RepositoryReader` só lê dentro da raiz, recusa links simbólicos, `.git` e arquivos de segredos;
+- os processos MCP não herdam variáveis de ambiente (chaves de API e `GITHUB_TOKEN` ficam no processo da CLI);
+- as instruções dos agentes tratam diff e arquivos como dados, nunca como instruções;
+- um servidor que não inicia é ignorado com aviso, sem derrubar a revisão.
+
+## Observabilidade
+
+`CrewTelemetry` (Core) define o `ActivitySource` e o `Meter` `CodeReviewCrew`:
+
+| Span | Conteúdo |
+|---|---|
+| `code_review` | Raiz: arquivos, partes, veredito, problemas e tokens |
+| `invoke_agent <agente>` | Um por agente; eventos `retry`, status de erro e número de problemas |
+| `chat <modelo>` | Uma por chamada ao modelo (`UseOpenTelemetry` do Microsoft.Extensions.AI), sem prompts nem código |
+
+Métricas: `crc.tokens.input`, `crc.tokens.output`, `crc.findings` (por agente e severidade),
+`crc.agent.failures` e `crc.agent.duration`. A CLI exporta via OTLP quando `OTEL_EXPORTER_OTLP_ENDPOINT`
+existe; o AppHost do Aspire define essa variável e mostra tudo no dashboard.
+
 ## Tratamento de falhas
 
 | Falha | Comportamento |
@@ -45,14 +74,18 @@ flowchart TD
 | Sintetizador falha | Análises dos especialistas unidas sem consolidação (`DistinctBy` + ordenação por severidade) |
 | GitHub recusa um comentário inline (422) | A review é publicada novamente, só com o corpo |
 | Cancelamento pelo usuário (Ctrl+C) | Não há retry; a operação é cancelada |
+| Servidor MCP não inicia | Aviso no stderr; a revisão segue sem as ferramentas dele |
 
 ## Camadas e dependências
 
 - **`CodeReviewCrew.Core`** concentra toda a lógica. Depende de `Microsoft.Agents.AI`,
   `Microsoft.Extensions.AI` (abstração `IChatClient`), YamlDotNet e FileSystemGlobbing.
   **Não** referencia SDKs de provedores.
-- **`CodeReviewCrew.Cli`** é a composição: lê opções, cria o `IChatClient` do provedor escolhido
-  (`ChatClientFactory`) e liga as saídas. Deve continuar fina.
+- **`CodeReviewCrew.Providers`** cria o `IChatClient` de cada provedor (`ChatClientFactory`) e concentra os SDKs.
+- **`CodeReviewCrew.Cli`** é a composição: lê opções, inicia os servidores MCP, configura o OTLP e liga as
+  saídas. Deve continuar fina.
+- **`CodeReviewCrew.McpServer`** é um processo separado, falando MCP por stdio.
+- **`CodeReviewCrew.AppHost`** e **`CodeReviewCrew.Evals`** são pontos de entrada para observabilidade e avaliação.
 - **`action.yml`** só monta os argumentos da CLI a partir dos inputs da action.
 
 ## Saída estruturada
