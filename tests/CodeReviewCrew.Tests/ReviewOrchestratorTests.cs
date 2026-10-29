@@ -194,6 +194,18 @@ public class ReviewOrchestratorTests
     }
 
     [Theory]
+    [InlineData("High: Bloqueio sync-over-async", "Bloqueio sync-over-async")]
+    [InlineData("Médio - Medium: Falta de validação", "Falta de validação")]
+    [InlineData("[A05:2025 Injection] SQL por   interpolação", "[A05:2025 Injection] SQL por interpolação")]
+    [InlineData("Alta disponibilidade comprometida", "Alta disponibilidade comprometida")]
+    public void Removes_repeated_severity_and_extra_spaces_from_titles(string title, string expected)
+    {
+        var finding = new ReviewFinding(Severity.High, "a.cs", 1, title, "x", null);
+
+        Assert.Equal(expected, finding.Normalized().Title);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     public async Task Rejects_an_empty_diff(string diff)

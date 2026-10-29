@@ -69,7 +69,10 @@ public sealed class ReviewOrchestrator
         var reports = await Task.WhenAll(_specialists.Select(s => RunSpecialistAsync(s.Definition, s.Agent, chunks, usage, cancellationToken)));
         var report = await SynthesizeAsync(files, chunks, reports, usage, cancellationToken);
 
-        report = report with { Findings = report.Findings.Where(f => f.Severity >= _config.MinSeverity).ToList() };
+        report = report with
+        {
+            Findings = report.Findings.Select(f => f.Normalized()).Where(f => f.Severity >= _config.MinSeverity).ToList()
+        };
         var summary = usage.ToSummary();
 
         activity?.SetTag("crc.verdict", report.Verdict.ToString());
@@ -103,7 +106,7 @@ public sealed class ReviewOrchestrator
                     cancellationToken);
 
                 usage.Add(response.Usage, definition.Name);
-                findings.AddRange(response.Result.Findings ?? []);
+                findings.AddRange((response.Result.Findings ?? []).Select(f => f.Normalized()));
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
