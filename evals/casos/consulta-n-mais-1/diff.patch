@@ -1,0 +1,26 @@
+diff --git a/src/Reports/CustomerReport.cs b/src/Reports/CustomerReport.cs
+new file mode 100644
+index 0000000..9215641
+--- /dev/null
++++ b/src/Reports/CustomerReport.cs
+@@ -0,0 +1,20 @@
++using Microsoft.EntityFrameworkCore;
++
++namespace Shop.Reports;
++
++public sealed class CustomerReport(ShopDbContext db)
++{
++    public async Task<List<CustomerSummary>> BuildAsync(CancellationToken ct)
++    {
++        var customers = await db.Customers.ToListAsync(ct);
++        var summaries = new List<CustomerSummary>();
++
++        foreach (var customer in customers)
++        {
++            var orders = await db.Orders.Where(o => o.CustomerId == customer.Id).ToListAsync(ct);
++            summaries.Add(new CustomerSummary(customer.Name, orders.Count, orders.Sum(o => o.Total)));
++        }
++
++        return summaries;
++    }
++}

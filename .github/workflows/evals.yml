@@ -1,0 +1,39 @@
+name: Avaliação
+
+# Calls the real model for every labeled case, so it only runs on demand.
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Modelo da OpenAI
+        default: gpt-5-mini
+      filter:
+        description: Rodar só os casos cujo nome contém este texto (vazio = todos)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CRC_MODEL: ${{ inputs.model }}
+      EVAL_FILTER: ${{ inputs.filter }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Rodar a avaliação
+        run: |
+          args=(--output relatorio-avaliacao.md)
+          if [ -n "$EVAL_FILTER" ]; then args+=(--filtro "$EVAL_FILTER"); fi
+          dotnet run --project src/CodeReviewCrew.Evals -c Release -- "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relatorio-avaliacao
+          path: relatorio-avaliacao.md
+          if-no-files-found: ignore

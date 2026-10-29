@@ -1,0 +1,23 @@
+{
+  "descricao": "Busca de produtos monta o SQL concatenando a entrada do usuário.",
+  "deveBloquear": true,
+  "problemas": [
+    {
+      "arquivo": "src/Data/ProductRepository.cs",
+      "linha": 15,
+      "tolerancia": 2,
+      "palavrasChave": [
+        "sql",
+        "injection",
+        "injecao",
+        "concaten",
+        "parametr",
+        "interpol"
+      ],
+      "owasp": [
+        "A05"
+      ],
+      "severidadeMinima": "High"
+    }
+  ]
+}

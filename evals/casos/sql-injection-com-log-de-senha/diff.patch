@@ -1,0 +1,23 @@
+diff --git a/src/Auth/LoginService.cs b/src/Auth/LoginService.cs
+new file mode 100644
+index 0000000..301c34e
+--- /dev/null
++++ b/src/Auth/LoginService.cs
+@@ -0,0 +1,17 @@
++using Microsoft.Data.SqlClient;
++using Microsoft.Extensions.Logging;
++
++namespace Shop.Auth;
++
++public sealed class LoginService(SqlConnection connection, ILogger<LoginService> logger)
++{
++    public async Task<bool> LoginAsync(string user, string password, CancellationToken ct)
++    {
++        logger.LogInformation("Login de {User} com senha {Password}", user, password);
++
++        var sql = $"SELECT COUNT(*) FROM Users WHERE Login = '{user}' AND PasswordHash = '{PasswordHasher.Hash(password)}'";
++        await using var cmd = new SqlCommand(sql, connection);
++        var count = (int)(await cmd.ExecuteScalarAsync(ct))!;
++        return count == 1;
++    }
++}

@@ -1,0 +1,23 @@
+{
+  "descricao": "Relatório carrega os pedidos de cada cliente dentro de um laço.",
+  "deveBloquear": false,
+  "problemas": [
+    {
+      "arquivo": "src/Reports/CustomerReport.cs",
+      "linha": 14,
+      "tolerancia": 3,
+      "palavrasChave": [
+        "n+1",
+        "n + 1",
+        "consulta",
+        "laco",
+        "loop",
+        "include",
+        "query",
+        "queries"
+      ],
+      "owasp": [],
+      "severidadeMinima": "Medium"
+    }
+  ]
+}

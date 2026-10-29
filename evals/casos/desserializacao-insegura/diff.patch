@@ -1,0 +1,28 @@
+diff --git a/src/Api/WebhookController.cs b/src/Api/WebhookController.cs
+new file mode 100644
+index 0000000..40178a5
+--- /dev/null
++++ b/src/Api/WebhookController.cs
+@@ -0,0 +1,22 @@
++using Microsoft.AspNetCore.Mvc;
++using Newtonsoft.Json;
++
++namespace Shop.Api;
++
++[ApiController]
++[Route("api/webhooks")]
++public sealed class WebhookController(ICommandBus bus) : ControllerBase
++{
++    [HttpPost]
++    public async Task<IActionResult> Receive(CancellationToken ct)
++    {
++        using var reader = new StreamReader(Request.Body);
++        var body = await reader.ReadToEndAsync(ct);
++
++        var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
++        var command = JsonConvert.DeserializeObject<object>(body, settings);
++
++        await bus.DispatchAsync(command!, ct);
++        return Accepted();
++    }
++}

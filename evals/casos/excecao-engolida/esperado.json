@@ -1,0 +1,24 @@
+{
+  "descricao": "Falha no envio de e-mail é ignorada silenciosamente.",
+  "deveBloquear": false,
+  "problemas": [
+    {
+      "arquivo": "src/Notifications/WelcomeEmail.cs",
+      "linha": 11,
+      "tolerancia": 2,
+      "palavrasChave": [
+        "exce",
+        "engol",
+        "silenc",
+        "catch",
+        "ignora",
+        "log"
+      ],
+      "owasp": [
+        "A09",
+        "A10"
+      ],
+      "severidadeMinima": "Low"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "descricao": "Senhas guardadas com MD5 sem salt.",
+  "deveBloquear": true,
+  "problemas": [
+    {
+      "arquivo": "src/Auth/PasswordHasher.cs",
+      "linha": 10,
+      "tolerancia": 2,
+      "palavrasChave": [
+        "md5",
+        "hash",
+        "fraco",
+        "fraca",
+        "salt",
+        "senha"
+      ],
+      "owasp": [
+        "A04",
+        "A07"
+      ],
+      "severidadeMinima": "High"
+    }
+  ]
+}

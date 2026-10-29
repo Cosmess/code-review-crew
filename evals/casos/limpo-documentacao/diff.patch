@@ -1,0 +1,24 @@
+diff --git a/src/Pricing/DiscountCalculator.cs b/src/Pricing/DiscountCalculator.cs
+index 4d02813..0bc9b88 100644
+--- a/src/Pricing/DiscountCalculator.cs
++++ b/src/Pricing/DiscountCalculator.cs
+@@ -2,12 +2,15 @@ namespace Shop.Pricing;
+ 
+ public static class DiscountCalculator
+ {
+-    public static decimal Apply(decimal price, decimal p)
++    /// <summary>Applies a percentage discount and rounds the result to cents.</summary>
++    /// <param name="price">Original price; must not be negative.</param>
++    /// <param name="percentage">Discount between 0 and 100.</param>
++    public static decimal Apply(decimal price, decimal percentage)
+     {
+         ArgumentOutOfRangeException.ThrowIfNegative(price);
+-        ArgumentOutOfRangeException.ThrowIfNegative(p);
+-        ArgumentOutOfRangeException.ThrowIfGreaterThan(p, 100m);
++        ArgumentOutOfRangeException.ThrowIfNegative(percentage);
++        ArgumentOutOfRangeException.ThrowIfGreaterThan(percentage, 100m);
+ 
+-        return Math.Round(price * (1 - p / 100m), 2, MidpointRounding.AwayFromZero);
++        return Math.Round(price * (1 - percentage / 100m), 2, MidpointRounding.AwayFromZero);
+     }
+ }

@@ -1,0 +1,21 @@
+diff --git a/src/Auth/PasswordHasher.cs b/src/Auth/PasswordHasher.cs
+new file mode 100644
+index 0000000..ad805a9
+--- /dev/null
++++ b/src/Auth/PasswordHasher.cs
+@@ -0,0 +1,15 @@
++using System.Security.Cryptography;
++using System.Text;
++
++namespace Shop.Auth;
++
++public static class PasswordHasher
++{
++    public static string Hash(string password)
++    {
++        var bytes = MD5.HashData(Encoding.UTF8.GetBytes(password));
++        return Convert.ToHexString(bytes);
++    }
++
++    public static bool Verify(string password, string hash) => Hash(password) == hash;
++}

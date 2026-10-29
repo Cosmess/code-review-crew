@@ -1,0 +1,18 @@
+diff --git a/src/Data/ProductRepository.cs b/src/Data/ProductRepository.cs
+index 8a1e8b0..fb34d57 100644
+--- a/src/Data/ProductRepository.cs
++++ b/src/Data/ProductRepository.cs
+@@ -10,6 +10,13 @@ public sealed class ProductRepository(SqlConnection connection)
+         return await ReadProductsAsync(cmd, ct);
+     }
+ 
++    public async Task<List<Product>> SearchAsync(string term, CancellationToken ct)
++    {
++        var sql = "SELECT Id, Name, Price FROM Products WHERE Name LIKE '%" + term + "%'";
++        await using var cmd = new SqlCommand(sql, connection);
++        return await ReadProductsAsync(cmd, ct);
++    }
++
+     private static async Task<List<Product>> ReadProductsAsync(SqlCommand cmd, CancellationToken ct)
+     {
+         var products = new List<Product>();

@@ -1,0 +1,23 @@
+diff --git a/src/Api/FilesController.cs b/src/Api/FilesController.cs
+new file mode 100644
+index 0000000..61f1cb3
+--- /dev/null
++++ b/src/Api/FilesController.cs
+@@ -0,0 +1,17 @@
++using Microsoft.AspNetCore.Mvc;
++
++namespace Shop.Api;
++
++[ApiController]
++[Route("api/files")]
++public sealed class FilesController(IConfiguration configuration) : ControllerBase
++{
++    private readonly string _storageRoot = configuration["Storage:Root"]!;
++
++    [HttpGet("{name}")]
++    public IActionResult Download(string name)
++    {
++        var path = Path.Combine(_storageRoot, name);
++        return PhysicalFile(path, "application/octet-stream");
++    }
++}

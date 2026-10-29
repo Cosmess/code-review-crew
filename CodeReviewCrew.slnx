@@ -3,6 +3,7 @@
     <Project Path="src/CodeReviewCrew.AppHost/CodeReviewCrew.AppHost.csproj" />
     <Project Path="src/CodeReviewCrew.Cli/CodeReviewCrew.Cli.csproj" />
     <Project Path="src/CodeReviewCrew.Core/CodeReviewCrew.Core.csproj" />
+    <Project Path="src/CodeReviewCrew.Evals/CodeReviewCrew.Evals.csproj" />
     <Project Path="src/CodeReviewCrew.McpServer/CodeReviewCrew.McpServer.csproj" />
     <Project Path="src/CodeReviewCrew.Providers/CodeReviewCrew.Providers.csproj" />
   </Folder>

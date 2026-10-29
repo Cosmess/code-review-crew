@@ -1,0 +1,25 @@
+diff --git a/src/Data/ProductRepository.cs b/src/Data/ProductRepository.cs
+index 8a1e8b0..1a33f99 100644
+--- a/src/Data/ProductRepository.cs
++++ b/src/Data/ProductRepository.cs
+@@ -1,3 +1,4 @@
++using System.Data;
+ using Microsoft.Data.SqlClient;
+ 
+ namespace Shop.Data;
+@@ -10,6 +11,15 @@ public sealed class ProductRepository(SqlConnection connection)
+         return await ReadProductsAsync(cmd, ct);
+     }
+ 
++    public async Task<List<Product>> SearchAsync(string term, CancellationToken ct)
++    {
++        ArgumentException.ThrowIfNullOrWhiteSpace(term);
++
++        await using var cmd = new SqlCommand("SELECT Id, Name, Price FROM Products WHERE Name LIKE @term", connection);
++        cmd.Parameters.Add("@term", SqlDbType.NVarChar, 100).Value = $"%{term}%";
++        return await ReadProductsAsync(cmd, ct);
++    }
++
+     private static async Task<List<Product>> ReadProductsAsync(SqlCommand cmd, CancellationToken ct)
+     {
+         var products = new List<Product>();

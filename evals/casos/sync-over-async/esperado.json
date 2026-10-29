@@ -1,0 +1,22 @@
+{
+  "descricao": "Controller bloqueia a thread com .Result em uma chamada assíncrona.",
+  "deveBloquear": false,
+  "problemas": [
+    {
+      "arquivo": "src/Api/OrdersController.cs",
+      "linha": 12,
+      "tolerancia": 2,
+      "palavrasChave": [
+        "result",
+        "bloque",
+        "sync",
+        "sincron",
+        "deadlock",
+        "await",
+        "thread"
+      ],
+      "owasp": [],
+      "severidadeMinima": "Medium"
+    }
+  ]
+}

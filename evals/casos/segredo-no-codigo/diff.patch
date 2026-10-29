@@ -1,0 +1,27 @@
+diff --git a/src/Infra/PaymentGatewayClient.cs b/src/Infra/PaymentGatewayClient.cs
+new file mode 100644
+index 0000000..7f11dd8
+--- /dev/null
++++ b/src/Infra/PaymentGatewayClient.cs
+@@ -0,0 +1,21 @@
++using System.Net.Http.Headers;
++
++namespace Shop.Infra;
++
++public sealed class PaymentGatewayClient(HttpClient http)
++{
++    private const string ApiKey = "pgw_prod_4f8a1c7e9b2d6053aa71";
++
++    public async Task<string> ChargeAsync(decimal amount, string cardToken, CancellationToken ct)
++    {
++        using var request = new HttpRequestMessage(HttpMethod.Post, "v1/charges")
++        {
++            Content = JsonContent.Create(new { amount, source = cardToken })
++        };
++        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ApiKey);
++
++        using var response = await http.SendAsync(request, ct);
++        response.EnsureSuccessStatusCode();
++        return await response.Content.ReadAsStringAsync(ct);
++    }
++}
