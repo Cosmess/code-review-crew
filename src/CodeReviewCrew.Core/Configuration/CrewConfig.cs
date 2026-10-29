@@ -30,6 +30,9 @@ public sealed class CrewConfig
     /// <summary>Optional model prices, used to estimate the cost of a review.</summary>
     public PricingConfig? Pricing { get; set; }
 
+    /// <summary>Extra MCP servers whose tools are given to the specialist agents.</summary>
+    public List<McpServerConfig> McpServers { get; set; } = [];
+
     public static CrewConfig Default => new();
 
     public static CrewConfig Parse(string yaml)
@@ -85,7 +88,24 @@ public sealed class CrewConfig
         }
 
         _ = ResolveSpecialists();
+
+        if (McpServers.Any(s => string.IsNullOrWhiteSpace(s.Name) || string.IsNullOrWhiteSpace(s.Command)))
+        {
+            throw new InvalidOperationException("Cada item de mcpServers precisa de name e command.");
+        }
     }
+}
+
+/// <summary>An MCP server started over stdio. It does not inherit the environment (API keys stay private): pass what it needs in <see cref="Env"/>.</summary>
+public sealed class McpServerConfig
+{
+    public string Name { get; set; } = "";
+
+    public string Command { get; set; } = "";
+
+    public List<string> Args { get; set; } = [];
+
+    public Dictionary<string, string> Env { get; set; } = [];
 }
 
 /// <summary>Model prices in US dollars per one million tokens.</summary>

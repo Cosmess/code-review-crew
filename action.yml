@@ -27,6 +27,9 @@ inputs:
   fail-on:
     description: Falha o job se houver problema desta severidade ou maior (Low, Medium, High, Critical).
     default: ""
+  read-repository:
+    description: Dá aos agentes ferramentas MCP para ler arquivos completos e as convenções do repositório (requer actions/checkout).
+    default: "true"
 
 runs:
   using: composite
@@ -48,6 +51,7 @@ runs:
         CRC_POST: ${{ inputs.post-review }}
         CRC_SARIF: ${{ inputs.sarif-file }}
         CRC_FAIL_ON: ${{ inputs.fail-on }}
+        CRC_READ_REPOSITORY: ${{ inputs.read-repository }}
       run: |
         if [ -z "$PR_NUMBER" ]; then
           echo "::error::O Code Review Crew precisa rodar em eventos pull_request."
@@ -59,5 +63,6 @@ runs:
         if [ -f "$CRC_CONFIG" ]; then args+=(--config "$CRC_CONFIG"); fi
         if [ -n "$CRC_SARIF" ]; then args+=(--sarif "$CRC_SARIF"); fi
         if [ -n "$CRC_FAIL_ON" ]; then args+=(--fail-on "$CRC_FAIL_ON"); fi
+        if [ "$CRC_READ_REPOSITORY" = "true" ]; then args+=(--repo-path "$GITHUB_WORKSPACE"); fi
 
         dotnet run --project "$GITHUB_ACTION_PATH/src/CodeReviewCrew.Cli" -c Release -- "${args[@]}"

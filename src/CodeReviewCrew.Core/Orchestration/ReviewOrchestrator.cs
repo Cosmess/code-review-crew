@@ -29,14 +29,16 @@ public sealed class ReviewOrchestrator
     private readonly IReadOnlyList<(AgentDefinition Definition, AIAgent Agent)> _specialists;
     private readonly AIAgent _synthesizer;
 
-    public ReviewOrchestrator(IChatClient chatClient, CrewConfig? config = null, Func<int, TimeSpan>? retryBackoff = null)
+    /// <param name="tools">Tools the specialists may call, such as the repository tools of an MCP server.</param>
+    public ReviewOrchestrator(
+        IChatClient chatClient, CrewConfig? config = null, Func<int, TimeSpan>? retryBackoff = null, IReadOnlyList<AITool>? tools = null)
     {
         ArgumentNullException.ThrowIfNull(chatClient);
 
         _config = config ?? CrewConfig.Default;
         _retry = new RetryPolicy(_config.MaxRetries, TimeSpan.FromSeconds(_config.AgentTimeoutSeconds), retryBackoff);
         _specialists = _config.ResolveSpecialists()
-            .Select(definition => (definition, CreateAgent(chatClient, definition)))
+            .Select(definition => (definition, CreateAgent(chatClient, definition, tools)))
             .ToList();
         _synthesizer = CreateAgent(chatClient, Crew.Synthesizer);
     }
@@ -218,6 +220,8 @@ public sealed class ReviewOrchestrator
         return prompt.ToString();
     }
 
-    private static AIAgent CreateAgent(IChatClient chatClient, AgentDefinition definition) =>
-        new ChatClientAgent(chatClient, instructions: definition.Instructions, name: definition.Name, description: definition.Description);
+    private static AIAgent CreateAgent(IChatClient chatClient, AgentDefinition definition, IReadOnlyList<AITool>? tools = null) =>
+        tools is { Count: > 0 }
+            ? new ChatClientAgent(chatClient, definition.Instructions + Crew.ToolsInstructions, definition.Name, definition.Description, [.. tools])
+            : new ChatClientAgent(chatClient, instructions: definition.Instructions, name: definition.Name, description: definition.Description);
 }

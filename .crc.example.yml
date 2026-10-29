@@ -25,6 +25,17 @@ maxChunkChars: 60000
 agentTimeoutSeconds: 180
 maxRetries: 2
 
+# Servidores MCP extras cujas ferramentas os agentes especialistas podem usar.
+# Eles NÃO herdam as variáveis de ambiente (as chaves de API ficam protegidas): passe o necessário em env.
+# Para ler o próprio repositório não é preciso configurar nada: use --repo-path na CLI
+# (na GitHub Action isso já vem ligado).
+# mcpServers:
+#   - name: documentacao
+#     command: npx
+#     args: ["-y", "@exemplo/mcp-docs"]
+#     env:
+#       DOCS_TOKEN: "..."
+
 # Preço do modelo em US$ por 1 milhão de tokens, para estimar o custo da revisão.
 # Confira os valores atuais na página de preços do seu provedor.
 # pricing:

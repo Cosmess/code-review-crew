@@ -15,7 +15,8 @@ internal sealed record ReviewCommandOptions(
     FileInfo? ConfigFile,
     FileInfo? OutputFile,
     FileInfo? SarifFile,
-    Severity? FailOn);
+    Severity? FailOn,
+    DirectoryInfo? RepositoryPath);
 
 internal sealed class ReviewCommand(ReviewCommandOptions options)
 {
@@ -81,7 +82,13 @@ internal sealed class ReviewCommand(ReviewCommandOptions options)
             return Success;
         }
 
-        var orchestrator = new ReviewOrchestrator(ChatClientFactory.Create(), config);
+        if (options.RepositoryPath is { Exists: false } missing)
+        {
+            throw new ArgumentException($"Diretório do repositório não encontrado: {missing.FullName}");
+        }
+
+        await using var mcp = await McpToolHost.StartAsync(options.RepositoryPath?.FullName, config.McpServers, cancellationToken);
+        var orchestrator = new ReviewOrchestrator(ChatClientFactory.Create(), config, tools: mcp.Tools);
         orchestrator.AgentStarted += name => Console.Error.WriteLine($"▶ {name} iniciou");
         orchestrator.AgentRetrying += (name, attempt, ex) => Console.Error.WriteLine($"↻ {name}: tentativa {attempt} falhou ({ex.Message}), tentando de novo");
         orchestrator.AgentCompleted += report => Console.Error.WriteLine(report.Error is null
