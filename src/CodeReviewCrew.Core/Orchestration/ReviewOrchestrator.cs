@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using CodeReviewCrew.Core.Agents;
 using CodeReviewCrew.Core.Configuration;
 using CodeReviewCrew.Core.Diff;
 using CodeReviewCrew.Core.Models;
+using CodeReviewCrew.Core.Telemetry;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -60,18 +62,27 @@ public sealed class ReviewOrchestrator
         // A diff without file headers is still reviewed, as a single part.
         var chunks = files.Count > 0 ? DiffChunker.Chunk(files, _config.MaxChunkChars) : [diff];
         var usage = new UsageTracker(_config.Pricing);
+        using var activity = CrewTelemetry.StartReview(files.Count, chunks.Count);
 
         var reports = await Task.WhenAll(_specialists.Select(s => RunSpecialistAsync(s.Definition, s.Agent, chunks, usage, cancellationToken)));
         var report = await SynthesizeAsync(files, chunks, reports, usage, cancellationToken);
 
         report = report with { Findings = report.Findings.Where(f => f.Severity >= _config.MinSeverity).ToList() };
-        return new CrewResult(reports, report, usage.ToSummary());
+        var summary = usage.ToSummary();
+
+        activity?.SetTag("crc.verdict", report.Verdict.ToString());
+        activity?.SetTag("crc.findings", report.Findings.Count);
+        activity?.SetTag("gen_ai.usage.input_tokens", summary.InputTokens);
+        activity?.SetTag("gen_ai.usage.output_tokens", summary.OutputTokens);
+        return new CrewResult(reports, report, summary);
     }
 
     private async Task<SpecialistReport> RunSpecialistAsync(
         AgentDefinition definition, AIAgent agent, IReadOnlyList<string> chunks, UsageTracker usage, CancellationToken cancellationToken)
     {
         AgentStarted?.Invoke(definition.Name);
+        using var activity = CrewTelemetry.StartAgent(definition.Name);
+        var stopwatch = Stopwatch.StartNew();
 
         var findings = new List<ReviewFinding>();
         var errors = new List<string>();
@@ -86,19 +97,21 @@ public sealed class ReviewOrchestrator
                         $"Revise o diff deste pull request{part}:\n\n```diff\n{chunks[i]}\n```",
                         serializerOptions: JsonOptions,
                         cancellationToken: token),
-                    (attempt, ex) => AgentRetrying?.Invoke(definition.Name, attempt, ex),
+                    (attempt, ex) => OnRetry(activity, definition.Name, attempt, ex),
                     cancellationToken);
 
-                usage.Add(response.Usage);
+                usage.Add(response.Usage, definition.Name);
                 findings.AddRange(response.Result.Findings ?? []);
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
                 errors.Add($"{ex.Message}{part}");
+                OnFailure(activity, definition.Name, ex);
             }
         }
 
         var report = new SpecialistReport(definition.Name, findings, errors.Count > 0 ? string.Join("; ", errors) : null);
+        RecordAgentResult(activity, definition.Name, findings, stopwatch);
         AgentCompleted?.Invoke(report);
         return report;
     }
@@ -118,6 +131,8 @@ public sealed class ReviewOrchestrator
         }
 
         AgentStarted?.Invoke(Crew.Synthesizer.Name);
+        using var activity = CrewTelemetry.StartAgent(Crew.Synthesizer.Name);
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var response = await _retry.ExecuteAsync(
@@ -125,14 +140,17 @@ public sealed class ReviewOrchestrator
                     BuildSynthesizerPrompt(files, chunks, reports),
                     serializerOptions: JsonOptions,
                     cancellationToken: token),
-                (attempt, ex) => AgentRetrying?.Invoke(Crew.Synthesizer.Name, attempt, ex),
+                (attempt, ex) => OnRetry(activity, Crew.Synthesizer.Name, attempt, ex),
                 cancellationToken);
 
-            usage.Add(response.Usage);
+            usage.Add(response.Usage, Crew.Synthesizer.Name);
+            RecordAgentResult(activity, Crew.Synthesizer.Name, response.Result.Findings, stopwatch);
             return response.Result;
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
+            OnFailure(activity, Crew.Synthesizer.Name, ex);
+
             var merged = reports
                 .SelectMany(r => r.Findings)
                 .DistinctBy(f => (f.File, f.Line, f.Title))
@@ -143,6 +161,33 @@ public sealed class ReviewOrchestrator
                 $"O agente sintetizador falhou ({ex.Message}). Os problemas abaixo reúnem as análises dos especialistas sem consolidação.",
                 ReviewReport.VerdictFor(merged),
                 merged);
+        }
+    }
+
+    private void OnRetry(Activity? activity, string agentName, int attempt, Exception exception)
+    {
+        activity?.AddEvent(new ActivityEvent("retry", tags: new ActivityTagsCollection
+        {
+            ["crc.attempt"] = attempt,
+            ["exception.message"] = exception.Message
+        }));
+        AgentRetrying?.Invoke(agentName, attempt, exception);
+    }
+
+    private static void OnFailure(Activity? activity, string agentName, Exception exception)
+    {
+        CrewTelemetry.RecordError(activity, exception);
+        CrewTelemetry.AgentFailures.Add(1, new KeyValuePair<string, object?>("gen_ai.agent.name", agentName));
+    }
+
+    private static void RecordAgentResult(Activity? activity, string agentName, IReadOnlyCollection<ReviewFinding> findings, Stopwatch stopwatch)
+    {
+        var agentTag = new KeyValuePair<string, object?>("gen_ai.agent.name", agentName);
+        activity?.SetTag("crc.findings", findings.Count);
+        CrewTelemetry.AgentDuration.Record(stopwatch.Elapsed.TotalSeconds, agentTag);
+        foreach (var group in findings.GroupBy(f => f.Severity))
+        {
+            CrewTelemetry.Findings.Add(group.Count(), agentTag, new KeyValuePair<string, object?>("crc.severity", group.Key.ToString()));
         }
     }
 

@@ -1,5 +1,6 @@
 using CodeReviewCrew.Core.Configuration;
 using CodeReviewCrew.Core.Models;
+using CodeReviewCrew.Core.Telemetry;
 using Microsoft.Extensions.AI;
 
 namespace CodeReviewCrew.Core.Orchestration;
@@ -10,10 +11,16 @@ internal sealed class UsageTracker(PricingConfig? pricing)
     private long _input;
     private long _output;
 
-    public void Add(UsageDetails? usage)
+    public void Add(UsageDetails? usage, string agentName)
     {
-        Interlocked.Add(ref _input, usage?.InputTokenCount ?? 0);
-        Interlocked.Add(ref _output, usage?.OutputTokenCount ?? 0);
+        var input = usage?.InputTokenCount ?? 0;
+        var output = usage?.OutputTokenCount ?? 0;
+        Interlocked.Add(ref _input, input);
+        Interlocked.Add(ref _output, output);
+
+        var agentTag = new KeyValuePair<string, object?>("gen_ai.agent.name", agentName);
+        CrewTelemetry.InputTokens.Add(input, agentTag);
+        CrewTelemetry.OutputTokens.Add(output, agentTag);
     }
 
     public UsageSummary ToSummary()

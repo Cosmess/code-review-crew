@@ -34,4 +34,5 @@ root.SetAction((parseResult, cancellationToken) => new ReviewCommand(new ReviewC
     parseResult.GetValue(sarifOption),
     parseResult.GetValue(failOnOption))).RunAsync(cancellationToken));
 
+using var telemetry = TelemetrySetup.StartIfConfigured();
 return await root.Parse(args).InvokeAsync();
