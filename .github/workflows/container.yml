@@ -30,6 +30,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: type=ref,event=tag
+          flavor: latest=false
 
       - uses: docker/build-push-action@v6
         with:
@@ -41,5 +42,5 @@ jobs:
 
       - name: Smoke test
         env:
-          IMAGE: ${{ steps.meta.outputs.tags }}
+          IMAGE: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
         run: docker run --rm "$IMAGE" --help
