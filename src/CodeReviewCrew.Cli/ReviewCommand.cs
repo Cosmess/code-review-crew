@@ -3,6 +3,7 @@ using CodeReviewCrew.Core.GitHub;
 using CodeReviewCrew.Core.Models;
 using CodeReviewCrew.Core.Orchestration;
 using CodeReviewCrew.Core.Rendering;
+using CodeReviewCrew.Providers;
 
 namespace CodeReviewCrew.Cli;
 

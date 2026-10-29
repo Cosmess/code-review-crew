@@ -1,0 +1,45 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+
+namespace CodeReviewCrew.Core.Telemetry;
+
+/// <summary>
+/// OpenTelemetry instrumentation of the crew. Spans follow the GenAI semantic conventions
+/// (<c>invoke_agent</c>) so tools like the Aspire dashboard group them by agent.
+/// </summary>
+public static class CrewTelemetry
+{
+    public const string SourceName = "CodeReviewCrew";
+
+    public static readonly ActivitySource ActivitySource = new(SourceName);
+
+    private static readonly Meter Meter = new(SourceName);
+
+    public static readonly Counter<long> InputTokens = Meter.CreateCounter<long>("crc.tokens.input", "{token}", "Tokens de entrada enviados aos modelos.");
+    public static readonly Counter<long> OutputTokens = Meter.CreateCounter<long>("crc.tokens.output", "{token}", "Tokens de saída gerados pelos modelos.");
+    public static readonly Counter<long> Findings = Meter.CreateCounter<long>("crc.findings", "{finding}", "Problemas encontrados, por agente e severidade.");
+    public static readonly Counter<long> AgentFailures = Meter.CreateCounter<long>("crc.agent.failures", "{failure}", "Chamadas a agentes que falharam após todas as tentativas.");
+    public static readonly Histogram<double> AgentDuration = Meter.CreateHistogram<double>("crc.agent.duration", "s", "Duração de cada agente na revisão.");
+
+    public static Activity? StartReview(int files, int chunks)
+    {
+        var activity = ActivitySource.StartActivity("code_review");
+        activity?.SetTag("crc.files", files);
+        activity?.SetTag("crc.chunks", chunks);
+        return activity;
+    }
+
+    public static Activity? StartAgent(string agentName)
+    {
+        var activity = ActivitySource.StartActivity($"invoke_agent {agentName}");
+        activity?.SetTag("gen_ai.operation.name", "invoke_agent");
+        activity?.SetTag("gen_ai.agent.name", agentName);
+        return activity;
+    }
+
+    public static void RecordError(Activity? activity, Exception exception)
+    {
+        activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+        activity?.AddException(exception);
+    }
+}

@@ -1,19 +1,20 @@
 using Anthropic;
+using CodeReviewCrew.Core.Telemetry;
 using Microsoft.Extensions.AI;
 using OllamaSharp;
 using OpenAI;
 
-namespace CodeReviewCrew.Cli;
+namespace CodeReviewCrew.Providers;
 
 /// <summary>Creates the <see cref="IChatClient"/> for the provider selected through environment variables.</summary>
-internal static class ChatClientFactory
+public static class ChatClientFactory
 {
     public static IChatClient Create()
     {
         var provider = (Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "openai").ToLowerInvariant();
         var model = Environment.GetEnvironmentVariable("CRC_MODEL");
 
-        return provider switch
+        IChatClient client = provider switch
         {
             "ollama" => new OllamaApiClient(
                 new Uri(Environment.GetEnvironmentVariable("OLLAMA_ENDPOINT") ?? "http://localhost:11434"),
@@ -28,6 +29,11 @@ internal static class ChatClientFactory
 
             _ => throw new InvalidOperationException($"Provedor desconhecido '{provider}'. Use openai, ollama ou anthropic.")
         };
+
+        // One gen_ai "chat" span per model call, nested under the agent span. Prompts and code are not recorded.
+        return client.AsBuilder()
+            .UseOpenTelemetry(sourceName: CrewTelemetry.SourceName)
+            .Build();
     }
 
     private static string RequireEnv(string name) =>

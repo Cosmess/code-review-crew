@@ -1,14 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\CodeReviewCrew.Core\CodeReviewCrew.Core.csproj" />
+    <PackageReference Include="System.CommandLine" Version="2.0.14" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Anthropic" Version="13.3.0" />
-    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.11.0" />
-    <PackageReference Include="OllamaSharp" Version="5.5.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.14" />
+    <ProjectReference Include="..\CodeReviewCrew.Providers\CodeReviewCrew.Providers.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
