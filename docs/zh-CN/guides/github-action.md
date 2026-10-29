@@ -83,6 +83,6 @@ permissions:
 | 运行器 | Action 的运行方式 | 启动时间 |
 |---|---|---|
 | Linux（`ubuntu-latest`，amd64 或 arm64）并使用版本 tag（`@v1`、`@v1.0.1`） | 拉取预构建镜像 `ghcr.io/cosmess/code-review-crew` | 几秒钟 |
-| Windows、macOS，或使用分支 / 提交 SHA | 安装 .NET SDK 并从源码构建工具 | 大约一分钟 |
+| Windows、macOS，或使用分支 / 提交 SHA | 从源码构建工具（如果运行器上没有 .NET SDK 则先安装） | 在 GitHub 托管运行器上约 15 秒 |
 
 两种方式的行为完全相同。构建在 Action 自己的目录中进行，因此你仓库中的 `global.json` 不会对其产生影响。

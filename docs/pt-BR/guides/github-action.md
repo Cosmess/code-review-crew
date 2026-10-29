@@ -83,7 +83,7 @@ proteção da branch para impedir o merge. A revisão é publicada antes da falh
 | Runner | Como a Action roda | Início |
 |---|---|---|
 | Linux (`ubuntu-latest`, amd64 ou arm64) com uma tag de versão (`@v1`, `@v1.0.1`) | Baixa a imagem pronta `ghcr.io/cosmess/code-review-crew` | poucos segundos |
-| Windows, macOS, ou uma branch / SHA de commit | Instala o .NET SDK e compila a ferramenta a partir do código | cerca de um minuto |
+| Windows, macOS, ou uma branch / SHA de commit | Compila a ferramenta a partir do código (e instala o .NET SDK se o runner não tiver) | cerca de 15 segundos nos runners do GitHub |
 
 Os dois modos funcionam da mesma forma. A compilação usa a pasta da própria Action, então um `global.json` no seu
 repositório não interfere.

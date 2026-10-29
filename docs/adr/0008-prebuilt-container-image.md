@@ -4,8 +4,8 @@
 
 ## Context
 
-The first version of the Action installed the .NET SDK and ran `dotnet run` on every pull request. That added about a
-minute before the review started, and because the build ran from the reviewed repository's folder, a `global.json`
+The first version of the Action installed the .NET SDK and ran `dotnet run` on every pull request. That added a build
+(about 15 seconds on GitHub-hosted runners, more when the SDK has to be downloaded) before every review, and because the build ran from the reviewed repository's folder, a `global.json`
 pinning an older SDK there made the Action fail.
 
 A Docker container action (`runs.using: docker`) would start fast, but it only runs on Linux runners and needs the image
@@ -24,7 +24,7 @@ to exist before the version can be used.
 
 ## Consequences
 
-- Linux reviews start in seconds; other runners keep working, only slower.
+- Linux reviews start in about 5 seconds; other runners keep working, only slower.
 - This repository's own workflow keeps reviewing with the code of the pull request, because `uses: ./` builds from
   source.
 - Every release must push its version tag so the image is published (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).

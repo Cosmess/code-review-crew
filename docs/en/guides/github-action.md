@@ -82,7 +82,7 @@ branch protection rules to block the merge. The review is posted before the job 
 | Runner | How the Action runs | Startup |
 |---|---|---|
 | Linux (`ubuntu-latest`, amd64 or arm64) with a version tag (`@v1`, `@v1.0.1`) | Pulls the prebuilt image `ghcr.io/cosmess/code-review-crew` | a few seconds |
-| Windows, macOS, or a branch / commit SHA | Installs the .NET SDK and builds the tool from source | about a minute |
+| Windows, macOS, or a branch / commit SHA | Builds the tool from source (and installs the .NET SDK if the runner lacks it) | about 15 seconds on GitHub-hosted runners |
 
 Both modes behave the same way. The build uses the Action's own folder, so a `global.json` in your repository does not
 affect it.

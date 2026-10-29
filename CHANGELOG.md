@@ -8,8 +8,8 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 - The Action uses a prebuilt container image on Linux runners, published to
-  `ghcr.io/cosmess/code-review-crew` for every version. The review starts in seconds instead of installing the .NET
-  SDK and building the tool. Other runners, and refs without an image, still build from source.
+  `ghcr.io/cosmess/code-review-crew` for every version. The review starts in about 5 seconds, without building the
+  tool. Other runners, and refs without an image, still build from source.
 
 ### Fixed
 
