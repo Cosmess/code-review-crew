@@ -9,23 +9,41 @@ namespace CodeReviewCrew.Providers;
 /// <summary>Creates the <see cref="IChatClient"/> for the provider selected through environment variables.</summary>
 public static class ChatClientFactory
 {
+    /// <summary>Provider and model selected by CRC_PROVIDER and CRC_MODEL, with the defaults applied.</summary>
+    public static (string Provider, string Model) Selection
+    {
+        get
+        {
+            var provider = (Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "openai").ToLowerInvariant();
+            var model = Environment.GetEnvironmentVariable("CRC_MODEL") is { Length: > 0 } configured
+                ? configured
+                : provider switch
+                {
+                    "ollama" => "qwen3:8b",
+                    "anthropic" => "claude-sonnet-5-5",
+                    _ => "gpt-5-mini"
+                };
+
+            return (provider, model);
+        }
+    }
+
     public static IChatClient Create()
     {
-        var provider = (Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "openai").ToLowerInvariant();
-        var model = Environment.GetEnvironmentVariable("CRC_MODEL");
+        var (provider, model) = Selection;
 
         IChatClient client = provider switch
         {
             "ollama" => new OllamaApiClient(
                 new Uri(Environment.GetEnvironmentVariable("OLLAMA_ENDPOINT") ?? "http://localhost:11434"),
-                model ?? "qwen3:8b"),
+                model),
 
             "openai" => new OpenAIClient(RequireEnv("OPENAI_API_KEY"))
-                .GetChatClient(model ?? "gpt-5-mini")
+                .GetChatClient(model)
                 .AsIChatClient(),
 
             "anthropic" => new AnthropicClient { ApiKey = RequireEnv("ANTHROPIC_API_KEY") }
-                .AsIChatClient(model ?? "claude-sonnet-5-5"),
+                .AsIChatClient(model),
 
             _ => throw new InvalidOperationException($"Provedor desconhecido '{provider}'. Use openai, ollama ou anthropic.")
         };

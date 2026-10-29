@@ -59,7 +59,8 @@ root.SetAction(async (parseResult, cancellationToken) =>
     }
 
     var summary = new EvalSummary(scores);
-    var model = $"{Environment.GetEnvironmentVariable("CRC_PROVIDER") ?? "openai"}/{Environment.GetEnvironmentVariable("CRC_MODEL") ?? "padrão"}";
+    var (provider, modelName) = ChatClientFactory.Selection;
+    var model = $"{provider}/{modelName}";
     var report = EvalReportRenderer.Render(summary, model, new UsageSummary(inputTokens, outputTokens, cost));
     Console.WriteLine(report);
 
