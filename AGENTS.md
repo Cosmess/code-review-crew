@@ -69,7 +69,8 @@ dotnet run --project src/CodeReviewCrew.Evals                            # evalu
 | `evals/cases/` | Labeled pull requests (`diff.patch` + `expected.json`) |
 | `tests/CodeReviewCrew.Tests/` | Unit tests (including the real MCP protocol and dataset consistency) |
 | `tests/CodeReviewCrew.IntegrationTests/` | Tests against the real OpenAI API |
-| `action.yml` | Composite GitHub Action |
+| `action.yml` | Composite GitHub Action: prebuilt image on Linux, build from source elsewhere |
+| `Dockerfile`, `.github/workflows/container.yml` | Prebuilt image, published to GHCR for every version tag |
 
 ## Guides for common tasks
 
@@ -81,10 +82,12 @@ dotnet run --project src/CodeReviewCrew.Evals                            # evalu
 - [Observability with Aspire](docs/en/guides/observability.md)
 - [Evaluation and adding cases](evals/README.md)
 - [Architecture decision records](docs/adr/README.md)
+- [Contributing and releasing](CONTRIBUTING.md), [changelog](CHANGELOG.md)
 
 ## Before finishing a task
 
 - [ ] `dotnet build` without errors or new warnings
 - [ ] `dotnet test` passing
 - [ ] README and docs updated in the three languages if behavior changed
+- [ ] `CHANGELOG.md` updated under *Unreleased* for user-visible changes
 - [ ] Commit following Conventional Commits, in Portuguese, without AI attribution

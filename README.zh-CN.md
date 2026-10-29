@@ -92,7 +92,8 @@ jobs:
 | `sarif-file` | 空 | 将问题以 SARIF 格式保存到该路径 |
 | `fail-on` | 空 | 存在该严重程度及以上的问题时使任务失败 |
 
-SARIF 上传、阻止合并以及来自 fork 的 Pull Request，请参阅 [GitHub Action 指南](docs/zh-CN/guides/github-action.md)。
+在 Linux 运行器上，Action 会拉取预构建镜像，几秒内即可启动。SARIF 上传、阻止合并、来自 fork 的 Pull Request
+以及其他运行器，请参阅 [GitHub Action 指南](docs/zh-CN/guides/github-action.md)。
 
 ## 命令行
 
@@ -198,6 +199,7 @@ evals/cases/                 带标注的 Pull Request
 tests/                       单元测试（无网络）和集成测试（真实模型）
 docs/                        英文、葡萄牙文和中文文档，以及 ADR
 action.yml                   GitHub Action
+Dockerfile                   Action 在 Linux 运行器上使用的预构建镜像
 AGENTS.md                    在本仓库中工作的 AI 智能体需遵守的规则
 ```
 
@@ -215,8 +217,13 @@ AGENTS.md                    在本仓库中工作的 AI 智能体需遵守的�
 - [x] 用于读取仓库的 MCP 工具
 - [x] 基于带标注 Pull Request 的评估套件
 - [x] 支持英语、葡萄牙语和中文的审查
-- [ ] 预构建容器镜像，加快 Action 启动速度
+- [x] 预构建容器镜像，让 Action 几秒内启动
 - [ ] 更多带标注的用例（其他语言和框架）
+
+## 参与贡献
+
+欢迎贡献：请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)（英文）。请按照 [SECURITY.md](SECURITY.md) 中的说明私下报告漏洞。
+各版本的变更记录见 [更新日志](CHANGELOG.md)。
 
 ## 许可证
 

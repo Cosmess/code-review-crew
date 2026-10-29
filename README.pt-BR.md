@@ -93,7 +93,8 @@ jobs:
 | `sarif-file` | vazio | Salva os problemas em SARIF neste caminho |
 | `fail-on` | vazio | Falha o job com problemas desta severidade ou maior |
 
-Envio de SARIF, bloqueio de merge e PRs de forks estão no [guia da GitHub Action](docs/pt-BR/guides/github-action.md).
+Em runners Linux, a Action baixa uma imagem pronta e começa em segundos. Envio de SARIF, bloqueio de merge, PRs de
+forks e outros runners estão no [guia da GitHub Action](docs/pt-BR/guides/github-action.md).
 
 ## Linha de comando
 
@@ -199,6 +200,7 @@ evals/cases/                 pull requests rotulados
 tests/                       testes unitários (sem rede) e de integração (modelo real)
 docs/                        documentação em inglês, português e chinês, mais os ADRs
 action.yml                   GitHub Action
+Dockerfile                   imagem pronta usada pela Action em runners Linux
 AGENTS.md                    regras para agentes de IA que trabalham neste repositório
 ```
 
@@ -216,8 +218,13 @@ AGENTS.md                    regras para agentes de IA que trabalham neste repos
 - [x] Ferramentas MCP para ler o repositório
 - [x] Suíte de avaliação com pull requests rotulados
 - [x] Revisões em inglês, português e chinês
-- [ ] Imagem de contêiner pronta para a Action iniciar mais rápido
+- [x] Imagem de contêiner pronta para a Action iniciar em segundos
 - [ ] Mais casos rotulados (outras linguagens e frameworks)
+
+## Contribuindo
+
+Contribuições são bem-vindas: veja o [CONTRIBUTING.md](CONTRIBUTING.md) (em inglês). Relate vulnerabilidades de forma
+privada, como descrito no [SECURITY.md](SECURITY.md). As mudanças de cada versão estão no [changelog](CHANGELOG.md).
 
 ## Licença
 

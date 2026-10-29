@@ -93,7 +93,8 @@ jobs:
 | `sarif-file` | empty | Save findings as SARIF to this path |
 | `fail-on` | empty | Fail the job on findings of this severity or higher |
 
-SARIF upload, merge blocking and fork pull requests are covered in the [GitHub Action guide](docs/en/guides/github-action.md).
+On Linux runners the Action pulls a prebuilt image and starts in seconds. SARIF upload, merge blocking, fork pull
+requests and other runners are covered in the [GitHub Action guide](docs/en/guides/github-action.md).
 
 ## Command line
 
@@ -199,6 +200,7 @@ evals/cases/                 labeled pull requests
 tests/                       unit tests (no network) and integration tests (real model)
 docs/                        documentation in English, Portuguese and Chinese, plus ADRs
 action.yml                   GitHub Action
+Dockerfile                   prebuilt image used by the Action on Linux runners
 AGENTS.md                    rules for AI agents working on this repository
 ```
 
@@ -216,8 +218,13 @@ AGENTS.md                    rules for AI agents working on this repository
 - [x] MCP tools to read the repository
 - [x] Evaluation suite with labeled pull requests
 - [x] Reviews in English, Portuguese and Chinese
-- [ ] Prebuilt container image to make the Action start faster
+- [x] Prebuilt container image so the Action starts in seconds
 - [ ] More labeled cases (other languages and frameworks)
+
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately, as described in
+[SECURITY.md](SECURITY.md). Changes are listed in the [changelog](CHANGELOG.md).
 
 ## License
 
