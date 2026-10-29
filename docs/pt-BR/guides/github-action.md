@@ -77,4 +77,13 @@ proteção da branch para impedir o merge. A revisão é publicada antes da falh
 - PRs vindos de forks não recebem secrets; pule a revisão nesse caso, como faz o
   [workflow](../../../.github/workflows/code-review.yml) deste repositório.
 - Fixe uma versão (`@v1`, uma tag ou um SHA de commit) em vez de `@main`.
-- A Action compila a ferramenta a partir do código a cada execução, o que leva cerca de um minuto.
+
+## Runners e tempo de início
+
+| Runner | Como a Action roda | Início |
+|---|---|---|
+| Linux (`ubuntu-latest`, amd64 ou arm64) com uma tag de versão (`@v1`, `@v1.0.1`) | Baixa a imagem pronta `ghcr.io/cosmess/code-review-crew` | poucos segundos |
+| Windows, macOS, ou uma branch / SHA de commit | Instala o .NET SDK e compila a ferramenta a partir do código | cerca de um minuto |
+
+Os dois modos funcionam da mesma forma. A compilação usa a pasta da própria Action, então um `global.json` no seu
+repositório não interfere.

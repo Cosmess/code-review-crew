@@ -37,9 +37,45 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-dotnet@v4
+    # Linux runners pull the prebuilt image published for this version; other runners, and versions without an
+    # image (a branch or a commit SHA), build the tool from source.
+    - name: Prepare Code Review Crew
+      id: prepare
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
+      run: |
+        if [ -z "$PR_NUMBER" ]; then
+          echo "::error::Code Review Crew must run on pull_request events."
+          exit 1
+        fi
+
+        mode=source
+        if [ "$RUNNER_OS" = "Linux" ] && [ -n "$ACTION_REPOSITORY" ] && [ -n "$ACTION_REF" ] && command -v docker > /dev/null; then
+          image="ghcr.io/${ACTION_REPOSITORY,,}:${ACTION_REF//\//-}"
+          if docker pull --quiet "$image" > /dev/null 2>&1; then
+            mode=container
+            echo "image=$image" >> "$GITHUB_OUTPUT"
+            echo "Using the prebuilt image $image."
+          else
+            echo "No prebuilt image for $ACTION_REF: building from source."
+          fi
+        fi
+        echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+    - if: steps.prepare.outputs.mode == 'source'
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+
+    # Built inside the Action's folder so a global.json in the reviewed repository does not pick the SDK.
+    - name: Build Code Review Crew
+      if: steps.prepare.outputs.mode == 'source'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: dotnet publish src/CodeReviewCrew.Cli -c Release -o "$RUNNER_TEMP/code-review-crew" --nologo
 
     - name: Review the pull request
       shell: bash
@@ -56,12 +92,9 @@ runs:
         CRC_SARIF: ${{ inputs.sarif-file }}
         CRC_FAIL_ON: ${{ inputs.fail-on }}
         CRC_READ_REPOSITORY: ${{ inputs.read-repository }}
+        CRC_MODE: ${{ steps.prepare.outputs.mode }}
+        CRC_IMAGE: ${{ steps.prepare.outputs.image }}
       run: |
-        if [ -z "$PR_NUMBER" ]; then
-          echo "::error::Code Review Crew must run on pull_request events."
-          exit 1
-        fi
-
         args=(--pr "$PR_NUMBER" --repo "$GITHUB_REPOSITORY")
         if [ "$CRC_POST" = "true" ]; then args+=(--post); fi
         if [ -f "$CRC_CONFIG" ]; then args+=(--config "$CRC_CONFIG"); fi
@@ -70,4 +103,14 @@ runs:
         if [ -n "$CRC_FAIL_ON" ]; then args+=(--fail-on "$CRC_FAIL_ON"); fi
         if [ "$CRC_READ_REPOSITORY" = "true" ]; then args+=(--repo-path "$GITHUB_WORKSPACE"); fi
 
-        dotnet run --project "$GITHUB_ACTION_PATH/src/CodeReviewCrew.Cli" -c Release -- "${args[@]}"
+        if [ "$CRC_MODE" = "container" ]; then
+          # The workspace and the runner's temp folder (which holds GITHUB_STEP_SUMMARY) keep their paths inside the
+          # container, so relative and absolute paths work the same way in both modes.
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -v "$RUNNER_TEMP:$RUNNER_TEMP" -w "$PWD" \
+            -e HOME=/tmp -e OPENAI_API_KEY -e GITHUB_TOKEN -e GITHUB_REPOSITORY -e GITHUB_API_URL \
+            -e GITHUB_STEP_SUMMARY -e CRC_PROVIDER -e CRC_MODEL \
+            "$CRC_IMAGE" "${args[@]}"
+        else
+          dotnet "$RUNNER_TEMP/code-review-crew/crc.dll" "${args[@]}"
+        fi

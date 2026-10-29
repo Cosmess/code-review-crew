@@ -76,4 +76,13 @@ branch protection rules to block the merge. The review is posted before the job 
 - Pull requests from forks do not receive secrets; skip the review in that case, as this repository's
   [workflow](../../../.github/workflows/code-review.yml) does.
 - Pin a version (`@v1`, a tag or a commit SHA) instead of `@main`.
-- The Action builds the tool from source on each run, which takes about a minute.
+
+## Runners and startup time
+
+| Runner | How the Action runs | Startup |
+|---|---|---|
+| Linux (`ubuntu-latest`, amd64 or arm64) with a version tag (`@v1`, `@v1.0.1`) | Pulls the prebuilt image `ghcr.io/cosmess/code-review-crew` | a few seconds |
+| Windows, macOS, or a branch / commit SHA | Installs the .NET SDK and builds the tool from source | about a minute |
+
+Both modes behave the same way. The build uses the Action's own folder, so a `global.json` in your repository does not
+affect it.

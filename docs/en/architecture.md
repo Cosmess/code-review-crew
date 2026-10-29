@@ -95,7 +95,9 @@ is set; the Aspire AppHost sets it and shows everything in its dashboard.
   the outputs. It must stay thin.
 - **`CodeReviewCrew.McpServer`** is a separate process speaking MCP over stdio.
 - **`CodeReviewCrew.AppHost`** and **`CodeReviewCrew.Evals`** are entry points for observability and evaluation.
-- **`action.yml`** only turns the Action inputs into CLI arguments.
+- **`action.yml`** only turns the Action inputs into CLI arguments. On Linux runners it runs the CLI from the prebuilt
+  image (`Dockerfile`, published by the `Container image` workflow); elsewhere it builds the CLI from source. See
+  [ADR 0008](../adr/0008-prebuilt-container-image.md).
 
 ## Structured output
 

@@ -9,3 +9,4 @@
 | [0005](0005-read-only-mcp-tools.md) | Read-only MCP tools confined to the repository |
 | [0006](0006-opentelemetry-observability.md) | Observability with OpenTelemetry and .NET Aspire |
 | [0007](0007-english-code-with-localized-reviews.md) | English code and prompts, localized reviews and docs |
+| [0008](0008-prebuilt-container-image.md) | Prebuilt container image for the Action, with a build-from-source fallback |

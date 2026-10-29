@@ -92,7 +92,9 @@ Pull Request 属于不可信内容，因此：
 - **`CodeReviewCrew.Cli`** 是组合根：读取选项、启动 MCP 服务器、配置 OTLP 并连接各种输出。它应保持精简。
 - **`CodeReviewCrew.McpServer`** 是一个独立进程，通过 stdio 使用 MCP 协议通信。
 - **`CodeReviewCrew.AppHost`** 和 **`CodeReviewCrew.Evals`** 分别是可观测性和评估的入口。
-- **`action.yml`** 只负责将 Action 的输入转换为 CLI 参数。
+- **`action.yml`** 只负责将 Action 的输入转换为 CLI 参数。在 Linux 运行器上，它使用预构建镜像运行 CLI
+  （`Dockerfile`，由 `Container image` 工作流发布）；在其他运行器上则从源码构建 CLI。
+  参见 [ADR 0008](../adr/0008-prebuilt-container-image.md)。
 
 ## 结构化输出
 

@@ -95,7 +95,9 @@ o AppHost do Aspire define essa variável e mostra tudo no dashboard.
   Deve continuar fina.
 - **`CodeReviewCrew.McpServer`** é um processo separado, falando MCP por stdio.
 - **`CodeReviewCrew.AppHost`** e **`CodeReviewCrew.Evals`** são pontos de entrada para observabilidade e avaliação.
-- **`action.yml`** só transforma os inputs da Action em argumentos da CLI.
+- **`action.yml`** só transforma os inputs da Action em argumentos da CLI. Em runners Linux, roda a CLI a partir da
+  imagem pronta (`Dockerfile`, publicada pelo workflow `Container image`); nos demais, compila a CLI a partir do código.
+  Veja o [ADR 0008](../adr/0008-prebuilt-container-image.md).
 
 ## Saída estruturada
 

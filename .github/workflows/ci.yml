@@ -18,6 +18,15 @@ jobs:
       - name: Unit tests
         run: dotnet test tests/CodeReviewCrew.Tests --no-build -c Release --verbosity normal
 
+  # Builds the image the Action uses on Linux runners, without publishing it.
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t code-review-crew:ci .
+      - name: Smoke test
+        run: docker run --rm code-review-crew:ci --help
+
   # Calls the real OpenAI API, so it only runs on main and when the secret exists.
   integration:
     if: github.event_name == 'push'
