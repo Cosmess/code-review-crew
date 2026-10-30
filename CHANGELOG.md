@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The timeout message of an agent call was still in Portuguese; it is now in English, like every other message.
+
 ## [1.0.1] - 2026-10-29
 
 ### Changed
@@ -32,5 +38,6 @@ First public release, available on the GitHub Marketplace.
 - OpenTelemetry traces and a .NET Aspire dashboard.
 - Evaluation suite with labeled pull requests.
 
+[Unreleased]: https://github.com/Cosmess/code-review-crew/compare/v1.0.1...main
 [1.0.1]: https://github.com/Cosmess/code-review-crew/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Cosmess/code-review-crew/releases/tag/v1.0.0
