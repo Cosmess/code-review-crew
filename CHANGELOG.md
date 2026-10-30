@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-30
+
 ### Fixed
 
 - The timeout message of an agent call was still in Portuguese; it is now in English, like every other message.
@@ -38,6 +40,7 @@ First public release, available on the GitHub Marketplace.
 - OpenTelemetry traces and a .NET Aspire dashboard.
 - Evaluation suite with labeled pull requests.
 
-[Unreleased]: https://github.com/Cosmess/code-review-crew/compare/v1.0.1...main
+[Unreleased]: https://github.com/Cosmess/code-review-crew/compare/v1.0.2...main
+[1.0.2]: https://github.com/Cosmess/code-review-crew/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/Cosmess/code-review-crew/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Cosmess/code-review-crew/releases/tag/v1.0.0
